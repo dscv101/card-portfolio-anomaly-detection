@@ -1,0 +1,13 @@
+# Development dependencies
+-r requirements.txt
+
+# Code formatting and linting
+black>=23.7.0
+ruff>=0.1.0
+flake8>=6.1.0
+mypy>=1.5.1
+
+# Development tools
+ipython>=8.14.0
+jupyter>=1.0.0
+

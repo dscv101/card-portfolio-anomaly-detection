@@ -1,0 +1,84 @@
+# Model Configuration for Anomaly Detection System
+# Version: 1.0.0
+
+# Feature Engineering Configuration
+features:
+  # Top MCC (Merchant Category Code) configuration
+  topmcccount: 10
+  
+  # Lookback windows for aggregation (in days)
+  lookbackwindows:
+    - 7
+    - 30
+    - 90
+  
+  # Transaction aggregation metrics
+  aggregations:
+    - count
+    - sum
+    - mean
+    - std
+    - max
+  
+  # Feature groups to generate
+  featuregroups:
+    - transaction_velocity
+    - spending_patterns
+    - merchant_diversity
+
+# Isolation Forest Model Configuration
+isolationforest:
+  # Number of trees in the forest
+  nestimators: 100
+  
+  # Expected proportion of outliers
+  contamination: 0.01
+  
+  # Number of samples to draw for each tree
+  maxsamples: 256
+  
+  # Random state for reproducibility
+  randomstate: 42
+  
+  # Number of features to draw for each tree
+  maxfeatures: 1.0
+  
+  # Whether to bootstrap samples
+  bootstrap: false
+
+# Reporting Configuration
+reporting:
+  # Number of top anomalies to report
+  topnanomalies: 100
+  
+  # Business rules for filtering/prioritization
+  rules:
+    minspend: 100.0
+    mintransactions: 5
+  
+  # Output format configuration
+  outputformat:
+    type: csv
+    includefeatures: true
+    includescores: true
+
+# Logging Configuration
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: INFO
+  
+  # Log format: json or text
+  format: json
+  
+  # Log file configuration
+  file:
+    enabled: true
+    path: logs/anomaly_detection.log
+    maxbytes: 10485760  # 10MB
+    backupcount: 10
+  
+  # Console logging
+  console:
+    enabled: true
+    colorize: true
+
