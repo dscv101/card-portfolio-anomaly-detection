@@ -44,3 +44,12 @@ class FeatureEngineeringError(AnomalyDetectionError):
     """
 
     pass
+
+
+class ModelScoringError(AnomalyDetectionError):
+    """Raised when model training/scoring fails.
+
+    This includes failures in model fitting, scoring, or artifact persistence.
+    """
+
+    pass
