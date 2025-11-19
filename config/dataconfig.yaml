@@ -1,0 +1,115 @@
+# Data Configuration for Anomaly Detection System
+# Version: 1.0.0
+
+# Data Source Configuration
+datasource:
+  # Source type: csv, database, api
+  type: csv
+  
+  # Connection details (for database/api sources)
+  connection:
+    # host: localhost
+    # port: 5432
+    # database: analytics
+    # user: ${DB_USER}
+    # password: ${DB_PASSWORD}
+  
+  # CSV file path (for csv type)
+  filepath: datasamples/sample_data.csv
+  
+  # SQL query (for database sources)
+  query: |
+    SELECT 
+      customer_id,
+      transaction_date,
+      transaction_amount,
+      merchant_category_code,
+      merchant_name,
+      transaction_type
+    FROM transactions
+    WHERE transaction_date >= CURRENT_DATE - INTERVAL '90 days'
+
+# Data Schema Definition
+schema:
+  # Required columns and their data types
+  required_columns:
+    customer_id:
+      type: string
+      nullable: false
+    transaction_date:
+      type: datetime
+      nullable: false
+    transaction_amount:
+      type: float
+      nullable: false
+    merchant_category_code:
+      type: string
+      nullable: true
+    merchant_name:
+      type: string
+      nullable: true
+    transaction_type:
+      type: string
+      nullable: true
+  
+  # Optional columns
+  optional_columns:
+    - transaction_id
+    - card_type
+    - location
+    - currency
+
+# Data Validation Rules
+validation:
+  # Column validation rules
+  rules:
+    transaction_amount:
+      min: 0.01
+      max: 1000000.0
+      severity: error
+    
+    transaction_date:
+      min_date: "2020-01-01"
+      max_date_offset_days: 1  # Max 1 day in future
+      severity: error
+    
+    customer_id:
+      pattern: "^[A-Z0-9]{8,12}$"
+      severity: warning
+  
+  # Data quality thresholds
+  quality:
+    min_row_count: 100
+    max_null_percentage: 0.05  # 5% max nulls per column
+    max_duplicate_percentage: 0.01  # 1% max duplicates
+  
+  # Outlier detection for data validation
+  outliers:
+    enabled: true
+    method: iqr
+    multiplier: 3.0
+
+# Data Preprocessing Configuration
+preprocessing:
+  # Missing value handling
+  missing_values:
+    strategy: drop  # Options: drop, fill, interpolate
+    fill_value: 0
+  
+  # Date parsing
+  date_format: "%Y-%m-%d"
+  
+  # Currency conversion (if applicable)
+  currency:
+    target: USD
+    rates_source: static  # Options: static, api
+  
+  # Deduplication
+  deduplication:
+    enabled: true
+    subset:
+      - customer_id
+      - transaction_date
+      - transaction_amount
+    keep: first
+

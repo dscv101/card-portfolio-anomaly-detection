@@ -1,0 +1,74 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Jupyter
+.ipynb_checkpoints
+*.ipynb
+
+# Logs
+logs/*.log
+*.log
+
+# Outputs
+outputs/*
+!outputs/.gitkeep
+
+# Data
+datasamples/*
+!datasamples/.gitkeep
+
+# Environment variables
+.env
+.env.local
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Ruff
+.ruff_cache/
+
