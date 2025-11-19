@@ -16,29 +16,27 @@ reviews:
     drafts: false
   walkthrough: false
   request_changes_workflow: true
-
-tools:
-  ruff:
-    enabled: true
-    config_file: "pyproject.toml"
-    level: error
-  mypy:
-    enabled: true
-    strict: true
-    config_file: "mypy.ini"
-  black:
-    enabled: true
-    config_file: "pyproject.toml"
-  flake8:
-    enabled: true
-    config_file: ".flake8"
-
-path_instructions:
-  - paths: ["**/*.py"]
-    instructions: |
-      Favor clarity. If a section is complex, suggest an easier-to-read alternative.
-      Enforce type annotations where possible.
-      Docstrings should use simple English and describe only what is needed for a user to understand and use the code.
+  tools:
+    ruff:
+      enabled: true
+      config_file: "pyproject.toml"
+      level: error
+    mypy:
+      enabled: true
+      strict: true
+      config_file: "mypy.ini"
+    black:
+      enabled: true
+      config_file: "pyproject.toml"
+    flake8:
+      enabled: true
+      config_file: ".flake8"
+  path_instructions:
+    - paths: ["**/*.py"]
+      instructions: |
+        Favor clarity. If a section is complex, suggest an easier-to-read alternative.
+        Enforce type annotations where possible.
+        Docstrings should use simple English and describe only what is needed for a user to understand and use the code.
 
 chat:
   auto_reply: true
