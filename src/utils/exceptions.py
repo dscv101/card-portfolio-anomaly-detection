@@ -35,3 +35,12 @@ class ConfigurationError(AnomalyDetectionError):
     """
 
     pass
+
+
+class FeatureEngineeringError(AnomalyDetectionError):
+    """Raised when feature computation fails.
+
+    This includes failures in feature calculation, aggregation, or transformation.
+    """
+
+    pass
