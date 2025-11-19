@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 
-language: en-US
+language: en
 
 tone_instructions: |
   Focus on clear, actionable feedback.
@@ -32,7 +32,7 @@ reviews:
       enabled: true
       config_file: ".flake8"
   path_instructions:
-    - paths: ["**/*.py"]
+    - paths: "**/*.py"
       instructions: |
         Favor clarity. If a section is complex, suggest an easier-to-read alternative.
         Enforce type annotations where possible.
