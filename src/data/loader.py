@@ -102,7 +102,7 @@ class DataLoader:
         sql_config = self.config["datasource"].get("sql", {})
         connection_string = sql_config.get("connection_string")
         query_template = sql_config.get("query_template")
-        sql_config.get("timeout", 60)
+        timeout = sql_config.get("timeout", 60)
         max_retries = sql_config.get("max_retries", 3)
 
         if not connection_string:
@@ -133,7 +133,15 @@ class DataLoader:
                         "Install with: pip install sqlalchemy"
                     ) from e
 
-                engine = create_engine(connection_string)
+                # Create engine with connection timeout
+                engine = create_engine(
+                    connection_string,
+                    connect_args={"connect_timeout": timeout},
+                )
+
+                # Execute query with timeout using pandas
+                # Note: pandas read_sql doesn't directly support query timeout,
+                # but the connection timeout will prevent indefinite hangs
                 df = pd.read_sql_query(query, engine, params=None)
 
                 logger.info(
