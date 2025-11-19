@@ -387,7 +387,8 @@ class FeatureBuilder:
             # Calculate 4-week averages
             if 4 in lookback_windows:
                 historical_4w = (
-                    historical_base.groupby("customer_id")
+                    historical_base.sort_values(["customer_id", "reporting_week"])
+                    .groupby("customer_id")
                     .tail(4)
                     .groupby("customer_id")
                     .agg(
@@ -442,7 +443,8 @@ class FeatureBuilder:
             # Calculate 12-week averages and trends
             if 12 in lookback_windows:
                 historical_12w = (
-                    historical_base.groupby("customer_id")
+                    historical_base.sort_values(["customer_id", "reporting_week"])
+                    .groupby("customer_id")
                     .tail(12)
                     .groupby("customer_id")
                     .agg(avg_spend_12w=("total_spend", "mean"))
