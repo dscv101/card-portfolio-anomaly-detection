@@ -110,9 +110,10 @@ class ModelScorer:
         self.logger.info(f"Starting scoring pipeline for {row_count} customers")
 
         # Prepare feature matrix
-        X, feature_cols = self.prepare_feature_matrix(features_df)
+        X, feature_cols, valid_mask = self.prepare_feature_matrix(features_df)
+        valid_count = valid_mask.sum()
         self.logger.info(
-            f"Preparing feature matrix: {row_count} rows, {len(feature_cols)} features"
+            f"Prepared feature matrix: {valid_count}/{row_count} valid rows, {len(feature_cols)} features"
         )
 
         # Fit scaler and transform features
@@ -125,20 +126,27 @@ class ModelScorer:
         # Score anomalies
         scores, labels = self.score_anomalies(X_scaled)
         anomaly_count = int((labels == -1).sum())
-        anomaly_pct = (anomaly_count / row_count) * 100
+        anomaly_pct = (anomaly_count / valid_count) * 100
 
         self.logger.info(
-            f"Scored {row_count} customers, identified {anomaly_count} anomalies ({anomaly_pct:.1f}%)"
+            f"Scored {valid_count} valid customers, identified {anomaly_count} anomalies ({anomaly_pct:.1f}%)"
         )
 
         # Add scores and labels to DataFrame
+        # Use Option 2: Fill dropped rows with sentinel values (np.nan for scores, 0 for labels)
         result_df = features_df.copy()
-        result_df["anomaly_score"] = scores
-        result_df["anomaly_label"] = labels
+        result_df["anomaly_score"] = np.nan
+        result_df["anomaly_label"] = (
+            0  # 0 = unknown/invalid (neither normal=1 nor anomaly=-1)
+        )
+        result_df.loc[valid_mask, "anomaly_score"] = scores
+        result_df.loc[valid_mask, "anomaly_label"] = labels
 
         return result_df
 
-    def prepare_feature_matrix(self, df: pd.DataFrame) -> tuple[np.ndarray, list[str]]:
+    def prepare_feature_matrix(
+        self, df: pd.DataFrame
+    ) -> tuple[np.ndarray, list[str], np.ndarray]:
         """Extract numeric features and handle missing values.
 
         Selects all numeric columns except customer_id and reporting_week.
@@ -148,7 +156,10 @@ class ModelScorer:
             df: DataFrame with features from FeatureBuilder
 
         Returns:
-            Tuple of (feature_matrix, feature_column_names)
+            Tuple of (feature_matrix, feature_column_names, valid_mask):
+            - feature_matrix: Cleaned feature array (M rows after dropping NaN)
+            - feature_column_names: List of feature column names
+            - valid_mask: Boolean array (N elements) indicating valid rows
 
         Raises:
             ModelScoringError: If no numeric features found or all values are NaN
@@ -172,20 +183,22 @@ class ModelScorer:
 
         # Drop rows with any NaN values (conservative approach)
         nan_mask = np.isnan(X).any(axis=1)
+        valid_mask = ~nan_mask  # Track which rows are valid
+
         if nan_mask.any():
             nan_count = nan_mask.sum()
             self.logger.warning(
                 f"Dropping {nan_count} rows with missing values "
                 f"({(nan_count/len(X))*100:.1f}%)"
             )
-            X = X[~nan_mask]
+            X = X[valid_mask]
 
             if X.shape[0] == 0:
                 raise ModelScoringError(
                     "No valid rows remaining after dropping missing values"
                 )
 
-        return X, numeric_cols
+        return X, numeric_cols, valid_mask
 
     def fit_scaler(self, X: np.ndarray) -> np.ndarray:
         """Fit StandardScaler and transform features.

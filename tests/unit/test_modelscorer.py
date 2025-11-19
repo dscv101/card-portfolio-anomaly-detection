@@ -99,7 +99,7 @@ class TestFeaturePreparation:
     def test_prepare_feature_matrix_success(self, valid_config, sample_features_df):
         """Test successful feature matrix preparation."""
         scorer = ModelScorer(valid_config)
-        X, feature_cols = scorer.prepare_feature_matrix(sample_features_df)
+        X, feature_cols, valid_mask = scorer.prepare_feature_matrix(sample_features_df)
 
         # Check shape
         assert X.shape[0] == 100
@@ -114,6 +114,10 @@ class TestFeaturePreparation:
         # Check no NaN values
         assert not np.isnan(X).any()
 
+        # Check valid mask (all rows should be valid)
+        assert valid_mask.sum() == 100
+        assert valid_mask.all()
+
     def test_prepare_feature_matrix_with_nan(self, valid_config):
         """Test feature matrix preparation with missing values."""
         df = pd.DataFrame(
@@ -126,11 +130,17 @@ class TestFeaturePreparation:
         )
 
         scorer = ModelScorer(valid_config)
-        X, feature_cols = scorer.prepare_feature_matrix(df)
+        X, feature_cols, valid_mask = scorer.prepare_feature_matrix(df)
 
         # Should drop row with NaN
         assert X.shape[0] == 2
         assert not np.isnan(X).any()
+
+        # Check valid mask (only rows 0 and 2 should be valid)
+        assert valid_mask.sum() == 2
+        assert valid_mask[0]
+        assert not valid_mask[1]  # Row with NaN
+        assert valid_mask[2]
 
     def test_prepare_feature_matrix_all_nan(self, valid_config):
         """Test feature matrix preparation fails when all values are NaN."""
@@ -371,6 +381,59 @@ class TestArtifactPersistence:
             assert artifact_dir2.exists()
             assert (artifact_dir1 / "model.pkl").exists()
             assert (artifact_dir2 / "model.pkl").exists()
+
+
+class TestNaNHandling:
+    """Test NaN handling and shape mismatch bug fix."""
+
+    def test_fit_and_score_with_nan_preserves_shape(self, valid_config):
+        """Test that fit_and_score preserves DataFrame shape when NaN present.
+
+        This is a regression test for the critical shape mismatch bug where
+        prepare_feature_matrix() drops NaN rows but fit_and_score() tried to
+        assign shorter arrays to the full DataFrame.
+        """
+        # Create DataFrame with some NaN values
+        df = pd.DataFrame(
+            {
+                "customer_id": ["C001", "C002", "C003", "C004", "C005"],
+                "reporting_week": ["2025-11-18"] * 5,
+                "total_spend": [1000.0, np.nan, 2000.0, 3000.0, np.nan],
+                "total_transactions": [10, 20, np.nan, 40, 50],
+                "avg_ticket": [100.0, 150.0, 200.0, np.nan, 250.0],
+            }
+        )
+
+        scorer = ModelScorer(valid_config)
+        result_df = scorer.fit_and_score(df)
+
+        # Should preserve original DataFrame shape
+        assert len(result_df) == 5
+
+        # Check that anomaly_score and anomaly_label columns exist
+        assert "anomaly_score" in result_df.columns
+        assert "anomaly_label" in result_df.columns
+
+        # Rows with NaN should have sentinel values
+        # Row 0: no NaN -> should have valid score/label
+        assert not pd.isna(result_df.loc[0, "anomaly_score"])
+        assert result_df.loc[0, "anomaly_label"] in [-1, 1]
+
+        # Row 1: has NaN in total_spend -> should have sentinel values
+        assert pd.isna(result_df.loc[1, "anomaly_score"])
+        assert result_df.loc[1, "anomaly_label"] == 0
+
+        # Row 2: has NaN in total_transactions -> should have sentinel values
+        assert pd.isna(result_df.loc[2, "anomaly_score"])
+        assert result_df.loc[2, "anomaly_label"] == 0
+
+        # Row 3: has NaN in avg_ticket -> should have sentinel values
+        assert pd.isna(result_df.loc[3, "anomaly_score"])
+        assert result_df.loc[3, "anomaly_label"] == 0
+
+        # Row 4: has NaN in total_spend -> should have sentinel values
+        assert pd.isna(result_df.loc[4, "anomaly_score"])
+        assert result_df.loc[4, "anomaly_label"] == 0
 
 
 class TestEdgeCases:
