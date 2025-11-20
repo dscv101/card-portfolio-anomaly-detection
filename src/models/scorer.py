@@ -102,6 +102,9 @@ class ModelScorer:
         Side Effects:
             - Sets self.scaler: StandardScaler fitted on features
             - Sets self.model: IsolationForest fitted on scaled features
+            - Sets self.feature_names: List of feature column names used in training
+            - Sets self.row_count: Number of valid rows used for training
+            - Sets self.anomaly_count: Number of anomalies detected
         """
         if features_df.empty:
             raise ModelScoringError("Cannot score empty feature matrix")
@@ -116,6 +119,10 @@ class ModelScorer:
             f"Prepared feature matrix: {valid_count}/{row_count} valid rows, {len(feature_cols)} features"
         )
 
+        # Store training metrics as instance attributes for artifact persistence
+        self.feature_names = feature_cols
+        self.row_count = int(valid_count)
+
         # Fit scaler and transform features
         X_scaled = self.fit_scaler(X)
         self.logger.info("Fitted StandardScaler")
@@ -127,6 +134,9 @@ class ModelScorer:
         scores, labels = self.score_anomalies(X_scaled)
         anomaly_count = int((labels == -1).sum())
         anomaly_pct = (anomaly_count / valid_count) * 100
+
+        # Store anomaly count for artifact persistence
+        self.anomaly_count = anomaly_count
 
         self.logger.info(
             f"Scored {valid_count} valid customers, identified {anomaly_count} anomalies ({anomaly_pct:.1f}%)"
@@ -338,12 +348,15 @@ class ModelScorer:
             with open(model_path, "wb") as f:
                 pickle.dump(self.model, f)
 
-            # Save metadata
+            # Save metadata with training metrics
             metadata = {
                 "training_date": datetime.now().isoformat(),
                 "reporting_week": reporting_week,
                 "config": self.config,
                 "sklearn_version": self._get_sklearn_version(),
+                "feature_names": self.feature_names,
+                "row_count": self.row_count,
+                "anomaly_count": self.anomaly_count,
             }
 
             metadata_path = os.path.join(artifact_dir, "metadata.json")

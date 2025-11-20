@@ -351,6 +351,22 @@ class TestArtifactPersistence:
                 assert "config" in metadata
                 assert metadata["config"]["nestimators"] == 100
 
+                # Verify training metrics are persisted
+                assert "feature_names" in metadata
+                assert metadata["feature_names"] is not None
+                assert isinstance(metadata["feature_names"], list)
+                assert len(metadata["feature_names"]) > 0
+
+                assert "row_count" in metadata
+                assert metadata["row_count"] is not None
+                assert isinstance(metadata["row_count"], int)
+                assert metadata["row_count"] > 0
+
+                assert "anomaly_count" in metadata
+                assert metadata["anomaly_count"] is not None
+                assert isinstance(metadata["anomaly_count"], int)
+                assert metadata["anomaly_count"] >= 0
+
     def test_save_artifacts_without_fitted_model(self, valid_config):
         """Test artifact saving fails without fitted model."""
         scorer = ModelScorer(valid_config)
