@@ -561,3 +561,264 @@ class TestReportGeneratorApplyTags:
         assert top_df["meets_min_spend"].all()
         assert top_df["meets_min_transactions"].all()
         assert not top_df["rule_flagged"].any()
+
+
+class TestReportGeneratorJoinMccBreakdown:
+    """Test join_mcc_breakdown method."""
+
+    def test_join_mcc_breakdown_adds_mcc_columns(
+        self, valid_config, sample_scored_df, sample_raw_df
+    ):
+        """Test join_mcc_breakdown() adds MCC spend and transaction columns."""
+        generator = ReportGenerator(valid_config)
+        ranked_df = generator.rank_anomalies(sample_scored_df)
+        top_df = generator.apply_tags(ranked_df, top_n=10)
+
+        result_df = generator.join_mcc_breakdown(top_df, sample_raw_df)
+
+        # Should have MCC columns added
+        mcc_cols = [col for col in result_df.columns if col.startswith("mcc_")]
+        assert len(mcc_cols) > 0
+
+        # Each MCC should have both spend and transaction columns
+        mcc_codes = set()
+        for col in mcc_cols:
+            if col.endswith("_spend"):
+                mcc_code = col.replace("mcc_", "").replace("_spend", "")
+                mcc_codes.add(mcc_code)
+                # Check corresponding transaction column exists
+                assert f"mcc_{mcc_code}_transactions" in result_df.columns
+
+    def test_join_mcc_breakdown_preserves_all_customers(
+        self, valid_config, sample_scored_df, sample_raw_df
+    ):
+        """Test join_mcc_breakdown() preserves all customers from top_df."""
+        generator = ReportGenerator(valid_config)
+        ranked_df = generator.rank_anomalies(sample_scored_df)
+        top_df = generator.apply_tags(ranked_df, top_n=10)
+
+        result_df = generator.join_mcc_breakdown(top_df, sample_raw_df)
+
+        # Should have same number of customers
+        assert len(result_df) == len(top_df)
+        assert set(result_df["customer_id"]) == set(top_df["customer_id"])
+
+    def test_join_mcc_breakdown_aggregates_correctly(self, valid_config):
+        """Test join_mcc_breakdown() correctly aggregates MCC data."""
+        generator = ReportGenerator(valid_config)
+
+        top_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_score": [-0.8, -0.5],
+            }
+        )
+
+        raw_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C1", "C2"],
+                "mcc": ["5411", "5411", "5812"],
+                "spend_amount": [100.0, 50.0, 200.0],
+                "transaction_count": [5, 3, 10],
+            }
+        )
+
+        result_df = generator.join_mcc_breakdown(top_df, raw_df)
+
+        # C1 should have aggregated spend for MCC 5411
+        assert result_df.loc[result_df["customer_id"] == "C1", "mcc_5411_spend"].iloc[
+            0
+        ] == 150.0
+        assert result_df.loc[
+            result_df["customer_id"] == "C1", "mcc_5411_transactions"
+        ].iloc[0] == 8
+
+        # C2 should have spend for MCC 5812
+        assert result_df.loc[result_df["customer_id"] == "C2", "mcc_5812_spend"].iloc[
+            0
+        ] == 200.0
+        assert result_df.loc[
+            result_df["customer_id"] == "C2", "mcc_5812_transactions"
+        ].iloc[0] == 10
+
+    def test_join_mcc_breakdown_fills_missing_mccs_with_zero(self, valid_config):
+        """Test join_mcc_breakdown() fills missing MCC values with 0."""
+        generator = ReportGenerator(valid_config)
+
+        top_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_score": [-0.8, -0.5],
+            }
+        )
+
+        raw_df = pd.DataFrame(
+            {
+                "customer_id": ["C1"],  # Only C1 has transactions
+                "mcc": ["5411"],
+                "spend_amount": [100.0],
+                "transaction_count": [5],
+            }
+        )
+
+        result_df = generator.join_mcc_breakdown(top_df, raw_df)
+
+        # C1 should have MCC 5411 data
+        assert result_df.loc[result_df["customer_id"] == "C1", "mcc_5411_spend"].iloc[
+            0
+        ] == 100.0
+
+        # C2 should have 0 for MCC 5411 (no transactions)
+        assert result_df.loc[result_df["customer_id"] == "C2", "mcc_5411_spend"].iloc[
+            0
+        ] == 0.0
+
+    def test_join_mcc_breakdown_with_no_matching_customers(
+        self, valid_config, caplog
+    ):
+        """Test join_mcc_breakdown() handles no matching customers."""
+        generator = ReportGenerator(valid_config)
+
+        top_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_score": [-0.8, -0.5],
+            }
+        )
+
+        # Raw data has different customers
+        raw_df = pd.DataFrame(
+            {
+                "customer_id": ["C3", "C4"],
+                "mcc": ["5411", "5812"],
+                "spend_amount": [100.0, 200.0],
+                "transaction_count": [5, 10],
+            }
+        )
+
+        with caplog.at_level(logging.WARNING):
+            result_df = generator.join_mcc_breakdown(top_df, raw_df)
+
+        # Should return top_df unchanged
+        assert len(result_df) == len(top_df)
+        assert list(result_df.columns) == list(top_df.columns)
+        assert "No matching transaction data found" in caplog.text
+
+    def test_join_mcc_breakdown_missing_required_columns(self, valid_config):
+        """Test join_mcc_breakdown() raises error with missing columns."""
+        generator = ReportGenerator(valid_config)
+
+        top_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_score": [-0.8, -0.5],
+            }
+        )
+
+        # Missing 'mcc' column
+        invalid_raw_df = pd.DataFrame(
+            {
+                "customer_id": ["C1"],
+                "spend_amount": [100.0],
+                "transaction_count": [5],
+            }
+        )
+
+        with pytest.raises(
+            ReportGenerationError, match="raw_df missing required columns.*mcc"
+        ):
+            generator.join_mcc_breakdown(top_df, invalid_raw_df)
+
+    def test_join_mcc_breakdown_handles_multiple_mccs_per_customer(
+        self, valid_config
+    ):
+        """Test join_mcc_breakdown() handles customers with multiple MCCs."""
+        generator = ReportGenerator(valid_config)
+
+        top_df = pd.DataFrame(
+            {
+                "customer_id": ["C1"],
+                "anomaly_score": [-0.8],
+            }
+        )
+
+        raw_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C1", "C1"],
+                "mcc": ["5411", "5812", "5999"],
+                "spend_amount": [100.0, 200.0, 50.0],
+                "transaction_count": [5, 10, 2],
+            }
+        )
+
+        result_df = generator.join_mcc_breakdown(top_df, raw_df)
+
+        # Should have columns for all 3 MCCs
+        assert "mcc_5411_spend" in result_df.columns
+        assert "mcc_5812_spend" in result_df.columns
+        assert "mcc_5999_spend" in result_df.columns
+
+        # Values should match
+        assert result_df["mcc_5411_spend"].iloc[0] == 100.0
+        assert result_df["mcc_5812_spend"].iloc[0] == 200.0
+        assert result_df["mcc_5999_spend"].iloc[0] == 50.0
+
+    def test_join_mcc_breakdown_logs_execution(
+        self, valid_config, sample_scored_df, sample_raw_df, caplog
+    ):
+        """Test join_mcc_breakdown() logs execution details."""
+        generator = ReportGenerator(valid_config)
+        ranked_df = generator.rank_anomalies(sample_scored_df)
+        top_df = generator.apply_tags(ranked_df, top_n=10)
+
+        with caplog.at_level(logging.INFO):
+            result_df = generator.join_mcc_breakdown(top_df, sample_raw_df)
+
+        assert "Joined MCC breakdown for" in caplog.text
+        assert "added" in caplog.text
+        assert "MCC columns" in caplog.text
+
+    def test_join_mcc_breakdown_preserves_original_columns(
+        self, valid_config, sample_scored_df, sample_raw_df
+    ):
+        """Test join_mcc_breakdown() preserves all original columns from top_df."""
+        generator = ReportGenerator(valid_config)
+        ranked_df = generator.rank_anomalies(sample_scored_df)
+        top_df = generator.apply_tags(ranked_df, top_n=10)
+
+        original_cols = set(top_df.columns)
+
+        result_df = generator.join_mcc_breakdown(top_df, sample_raw_df)
+
+        # All original columns should still exist
+        assert original_cols.issubset(set(result_df.columns))
+
+    def test_join_mcc_breakdown_filters_to_top_customers_only(self, valid_config):
+        """Test join_mcc_breakdown() only processes top N customers."""
+        generator = ReportGenerator(valid_config)
+
+        top_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_score": [-0.8, -0.5],
+            }
+        )
+
+        # Raw data includes additional customers not in top_df
+        raw_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2", "C3", "C4"],
+                "mcc": ["5411", "5812", "5411", "5999"],
+                "spend_amount": [100.0, 200.0, 300.0, 400.0],
+                "transaction_count": [5, 10, 15, 20],
+            }
+        )
+
+        result_df = generator.join_mcc_breakdown(top_df, raw_df)
+
+        # Should only have 2 customers from top_df
+        assert len(result_df) == 2
+        assert set(result_df["customer_id"]) == {"C1", "C2"}
+
+        # Should not include MCC data from C3/C4
+        # (but might have their MCC codes if C1/C2 also have transactions there)

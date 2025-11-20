@@ -243,6 +243,93 @@ class ReportGenerator:
             self.logger.error(f"Failed to apply tags: {e}")
             raise ReportGenerationError(f"Failed to apply tags: {e}") from e
 
+    def join_mcc_breakdown(
+        self, top_df: pd.DataFrame, raw_df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """Join detailed MCC breakdown for top N customers.
+
+        Aggregates transaction data by customer and MCC, then joins to the
+        top anomalies DataFrame to provide detailed spending patterns.
+
+        Args:
+            top_df: DataFrame with top N anomalies
+                Required columns: customer_id
+            raw_df: Raw transaction detail DataFrame
+                Required columns: customer_id, mcc, spend_amount, transaction_count
+
+        Returns:
+            DataFrame with MCC breakdown joined to top anomalies.
+            Adds columns for each unique MCC with spend and transaction metrics.
+
+        Raises:
+            ReportGenerationError: If required columns are missing or join fails
+        """
+        try:
+            # Validate required columns in raw_df
+            required_cols = ["customer_id", "mcc", "spend_amount", "transaction_count"]
+            missing_cols = [col for col in required_cols if col not in raw_df.columns]
+            if missing_cols:
+                raise ReportGenerationError(
+                    f"raw_df missing required columns: {missing_cols}"
+                )
+
+            # Filter raw_df to only include top N customers
+            top_customer_ids = top_df["customer_id"].unique()
+            filtered_raw = raw_df[raw_df["customer_id"].isin(top_customer_ids)].copy()
+
+            if filtered_raw.empty:
+                self.logger.warning(
+                    "No matching transaction data found for top customers"
+                )
+                # Return top_df unchanged
+                return top_df
+
+            # Aggregate by customer and MCC
+            mcc_agg = (
+                filtered_raw.groupby(["customer_id", "mcc"])
+                .agg(
+                    {
+                        "spend_amount": "sum",
+                        "transaction_count": "sum",
+                    }
+                )
+                .reset_index()
+            )
+
+            # Pivot to create one row per customer with MCC columns
+            # Format: mcc_{code}_spend and mcc_{code}_transactions
+            mcc_pivot_spend = mcc_agg.pivot(
+                index="customer_id", columns="mcc", values="spend_amount"
+            )
+            mcc_pivot_spend.columns = [f"mcc_{col}_spend" for col in mcc_pivot_spend.columns]
+
+            mcc_pivot_txn = mcc_agg.pivot(
+                index="customer_id", columns="mcc", values="transaction_count"
+            )
+            mcc_pivot_txn.columns = [f"mcc_{col}_transactions" for col in mcc_pivot_txn.columns]
+
+            # Combine spend and transaction pivots
+            mcc_combined = pd.concat([mcc_pivot_spend, mcc_pivot_txn], axis=1)
+            mcc_combined = mcc_combined.reset_index()
+
+            # Left join to preserve all top customers
+            result_df = top_df.merge(mcc_combined, on="customer_id", how="left")
+
+            # Fill NaN with 0 for MCC columns (customers with no transactions in that MCC)
+            mcc_cols = [col for col in result_df.columns if col.startswith("mcc_")]
+            result_df[mcc_cols] = result_df[mcc_cols].fillna(0)
+
+            self.logger.info(
+                f"Joined MCC breakdown for {len(top_df)} customers, "
+                f"added {len(mcc_cols)} MCC columns"
+            )
+
+            return result_df
+
+        except Exception as e:
+            self.logger.error(f"Failed to join MCC breakdown: {e}")
+            raise ReportGenerationError(f"Failed to join MCC breakdown: {e}") from e
+
     def _validate_inputs(self, scored_df: pd.DataFrame, raw_df: pd.DataFrame) -> None:
         """Validate input DataFrames have required columns.
 
