@@ -435,6 +435,59 @@ class TestNaNHandling:
         assert pd.isna(result_df.loc[4, "anomaly_score"])
         assert result_df.loc[4, "anomaly_label"] == 0
 
+    def test_fit_and_score_with_non_consecutive_index(self, valid_config):
+        """Test that the fix works with non-consecutive DataFrame indices.
+
+        This ensures the boolean mask indexing works correctly even when
+        DataFrame has gaps in the index (e.g., after filtering operations).
+        """
+        # Create DataFrame with non-consecutive index
+        df = pd.DataFrame(
+            {
+                "customer_id": ["C001", "C002", "C003", "C004", "C005"],
+                "reporting_week": ["2025-11-18"] * 5,
+                "total_spend": [1000.0, 2000.0, np.nan, 3000.0, 4000.0],
+                "total_transactions": [10, 20, 30, 40, 50],
+                "avg_ticket": [100.0, 150.0, 200.0, 250.0, 300.0],
+            },
+            index=[0, 2, 5, 7, 10],  # Non-consecutive indices
+        )
+
+        scorer = ModelScorer(valid_config)
+        result_df = scorer.fit_and_score(df)
+
+        # Should preserve original DataFrame shape and indices
+        assert len(result_df) == 5
+        assert list(result_df.index) == [0, 2, 5, 7, 10]
+
+        # Check sentinel values for row with NaN (index 5)
+        assert pd.isna(result_df.loc[5, "anomaly_score"])
+        assert result_df.loc[5, "anomaly_label"] == 0
+
+        # Check valid scores for other rows
+        for idx in [0, 2, 7, 10]:
+            assert not pd.isna(result_df.loc[idx, "anomaly_score"])
+            assert result_df.loc[idx, "anomaly_label"] in [-1, 1]
+
+    def test_fit_and_score_all_rows_have_nan(self, valid_config):
+        """Test behavior when every row has at least one NaN value.
+
+        This should raise an error since no valid rows remain for training.
+        """
+        df = pd.DataFrame(
+            {
+                "customer_id": ["C001", "C002", "C003"],
+                "reporting_week": ["2025-11-18"] * 3,
+                "total_spend": [np.nan, 2000.0, 3000.0],
+                "total_transactions": [10, np.nan, 40],
+                "avg_ticket": [100.0, 150.0, np.nan],
+            }
+        )
+
+        scorer = ModelScorer(valid_config)
+        with pytest.raises(ModelScoringError, match="No valid rows remaining"):
+            scorer.fit_and_score(df)
+
 
 class TestEdgeCases:
     """Test edge cases and error conditions."""
