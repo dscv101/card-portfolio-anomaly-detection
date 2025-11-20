@@ -242,10 +242,7 @@ class FeatureBuilder:
             # Calculate Herfindahl index (sum of squared shares)
             herfindahl = (
                 df_with_totals.groupby(["customer_id", "reporting_week"])
-                .apply(
-                    lambda x: self.calculate_herfindahl(x["mcc_share"]),
-                    include_groups=False,
-                )
+                .apply(lambda x: self.calculate_herfindahl(x["mcc_share"]))
                 .reset_index()
                 .rename(columns={0: "herfindahl_index"})
             )
@@ -472,10 +469,7 @@ class FeatureBuilder:
                     )
                     concentration_trend = (
                         historical_concentration.groupby("customer_id")
-                        .apply(
-                            lambda x: self._calculate_trend(x["herfindahl_index"]),
-                            include_groups=False,
-                        )
+                        .apply(lambda x: self._calculate_trend(x["herfindahl_index"]))
                         .reset_index()
                         .rename(columns={0: "mcc_concentration_trend_12w"})
                     )
@@ -533,7 +527,9 @@ class FeatureBuilder:
         if handle_missing == "impute_zero":
             growth = np.nan_to_num(growth, nan=0.0)
 
-        return pd.Series(growth, index=current.index)
+        from typing import cast
+
+        return cast(pd.Series, pd.Series(growth, index=current.index))
 
     def _calculate_trend(self, values: pd.Series) -> float:
         """Calculate linear trend (slope) of values over time.
@@ -550,7 +546,7 @@ class FeatureBuilder:
             return 0.0
 
         x = np.arange(len(values))
-        y = values.values
+        y = np.asarray(values.values)
 
         # Simple linear regression
         x_mean = x.mean()
