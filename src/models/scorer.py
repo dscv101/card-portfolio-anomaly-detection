@@ -245,6 +245,12 @@ class ModelScorer:
             random_state = self.config["randomstate"]
             bootstrap = self.config.get("bootstrap", False)
 
+            # Warn if contamination is unusually high
+            if contamination is not None and contamination > 0.2:
+                self.logger.warning(
+                    f"High contamination value: {contamination} > 0.2 may affect anomaly detection"
+                )
+
             self.model = IsolationForest(
                 n_estimators=n_estimators,
                 max_samples=max_samples,
@@ -262,7 +268,9 @@ class ModelScorer:
             )
 
         except Exception as e:
-            raise ModelScoringError(f"IsolationForest training failed: {e}") from e
+            raise ModelScoringError(
+                f"IsolationForest training failed: {type(e).__name__}: {e}"
+            ) from e
 
     def score_anomalies(self, X_scaled: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Generate anomaly scores and labels.

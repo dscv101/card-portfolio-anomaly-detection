@@ -11,6 +11,7 @@ Tests cover:
 """
 
 import json
+import logging
 import pickle
 import tempfile
 from pathlib import Path
@@ -510,14 +511,23 @@ class TestEdgeCases:
         assert "anomaly_score" in result_df.columns
         assert "anomaly_label" in result_df.columns
 
-    def test_high_contamination_warning(self, valid_config, sample_features_df):
-        """Test scoring with high contamination rate (should still work)."""
+    def test_high_contamination_warning(self, valid_config, sample_features_df, caplog):
+        """Test scoring with high contamination rate logs warning."""
         # Modify config for high contamination
         high_contam_config = valid_config.copy()
         high_contam_config["isolationforest"]["contamination"] = 0.25
 
         scorer = ModelScorer(high_contam_config)
-        result_df = scorer.fit_and_score(sample_features_df)
+
+        # Capture log output
+        with caplog.at_level(logging.WARNING):
+            result_df = scorer.fit_and_score(sample_features_df)
+
+        # Check warning was logged
+        assert any(
+            "High contamination value: 0.25 > 0.2" in record.message
+            for record in caplog.records
+        )
 
         # Check anomaly rate is approximately 25%
         anomaly_rate = (result_df["anomaly_label"] == -1).sum() / len(result_df)
