@@ -165,6 +165,84 @@ class ReportGenerator:
             self.logger.error(f"Failed to rank anomalies: {e}")
             raise ReportGenerationError(f"Failed to rank anomalies: {e}") from e
 
+    def apply_tags(self, ranked_df: pd.DataFrame, top_n: int) -> pd.DataFrame:
+        """Select top N anomalies and apply rule-based category tags.
+
+        Selects the top N most anomalous customers and applies business rule
+        tags based on configuration (REQ-6.2.1).
+
+        Args:
+            ranked_df: DataFrame sorted by anomaly_score (ascending)
+                Required columns: customer_id, anomaly_score
+                Optional columns used for tagging: total_spend, total_transactions
+            top_n: Number of top anomalies to select
+
+        Returns:
+            DataFrame with top N anomalies and additional tag columns:
+                - meets_min_spend: bool, True if spend >= minspend threshold
+                - meets_min_transactions: bool, True if transactions >= mintransactions
+                - rule_flagged: bool, True if any rule threshold not met
+
+        Raises:
+            ReportGenerationError: If required columns are missing or top_n invalid
+        """
+        try:
+            # Validate top_n parameter
+            if top_n <= 0:
+                raise ReportGenerationError(
+                    f"top_n must be positive, got {top_n}"
+                )
+
+            if top_n > len(ranked_df):
+                self.logger.warning(
+                    f"top_n ({top_n}) exceeds DataFrame length ({len(ranked_df)}), "
+                    f"using all {len(ranked_df)} rows"
+                )
+                top_n = len(ranked_df)
+
+            # Select top N anomalies
+            top_df = ranked_df.head(top_n).copy()
+
+            # Apply business rule tags if configuration exists
+            rules = self.config.get("rules", {})
+            
+            # Initialize tag columns with default values
+            top_df["meets_min_spend"] = True
+            top_df["meets_min_transactions"] = True
+            top_df["rule_flagged"] = False
+
+            # Apply minspend rule if configured and column exists
+            if "minspend" in rules and "total_spend" in top_df.columns:
+                min_spend = rules["minspend"]
+                top_df["meets_min_spend"] = top_df["total_spend"] >= min_spend
+                self.logger.debug(f"Applied minspend rule: threshold={min_spend}")
+
+            # Apply mintransactions rule if configured and column exists
+            if "mintransactions" in rules and "total_transactions" in top_df.columns:
+                min_txns = rules["mintransactions"]
+                top_df["meets_min_transactions"] = (
+                    top_df["total_transactions"] >= min_txns
+                )
+                self.logger.debug(
+                    f"Applied mintransactions rule: threshold={min_txns}"
+                )
+
+            # Set rule_flagged for any customer failing rules
+            top_df["rule_flagged"] = ~(
+                top_df["meets_min_spend"] & top_df["meets_min_transactions"]
+            )
+
+            flagged_count = top_df["rule_flagged"].sum()
+            self.logger.info(
+                f"Selected top {len(top_df)} anomalies, {flagged_count} flagged by rules"
+            )
+
+            return top_df
+
+        except Exception as e:
+            self.logger.error(f"Failed to apply tags: {e}")
+            raise ReportGenerationError(f"Failed to apply tags: {e}") from e
+
     def _validate_inputs(self, scored_df: pd.DataFrame, raw_df: pd.DataFrame) -> None:
         """Validate input DataFrames have required columns.
 

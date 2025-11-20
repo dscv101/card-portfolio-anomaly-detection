@@ -357,3 +357,207 @@ class TestReportGeneratorRankAnomalies:
 
         assert len(ranked_df) == 1
         assert ranked_df.iloc[0]["customer_id"] == "C1"
+
+
+class TestReportGeneratorApplyTags:
+    """Test apply_tags method."""
+
+    def test_apply_tags_selects_top_n(self, valid_config, sample_scored_df):
+        """Test apply_tags() selects exactly top N anomalies."""
+        generator = ReportGenerator(valid_config)
+        ranked_df = generator.rank_anomalies(sample_scored_df)
+
+        top_df = generator.apply_tags(ranked_df, top_n=10)
+
+        assert len(top_df) == 10
+
+    def test_apply_tags_adds_required_columns(self, valid_config, sample_scored_df):
+        """Test apply_tags() adds required tag columns."""
+        generator = ReportGenerator(valid_config)
+        ranked_df = generator.rank_anomalies(sample_scored_df)
+
+        top_df = generator.apply_tags(ranked_df, top_n=20)
+
+        assert "meets_min_spend" in top_df.columns
+        assert "meets_min_transactions" in top_df.columns
+        assert "rule_flagged" in top_df.columns
+
+    def test_apply_tags_with_min_spend_rule(self, valid_config):
+        """Test apply_tags() correctly applies minspend rule."""
+        generator = ReportGenerator(valid_config)
+
+        # Create DataFrame with known spend values
+        test_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2", "C3"],
+                "anomaly_score": [-0.8, -0.5, -0.3],
+                "total_spend": [50.0, 150.0, 200.0],  # minspend=100 in config
+                "total_transactions": [10, 10, 10],
+            }
+        )
+
+        top_df = generator.apply_tags(test_df, top_n=3)
+
+        # C1 has spend < 100, should fail rule
+        assert top_df.iloc[0]["meets_min_spend"] == False
+        assert top_df.iloc[1]["meets_min_spend"] == True
+        assert top_df.iloc[2]["meets_min_spend"] == True
+
+    def test_apply_tags_with_min_transactions_rule(self, valid_config):
+        """Test apply_tags() correctly applies mintransactions rule."""
+        generator = ReportGenerator(valid_config)
+
+        # Create DataFrame with known transaction counts
+        test_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2", "C3"],
+                "anomaly_score": [-0.8, -0.5, -0.3],
+                "total_spend": [200.0, 200.0, 200.0],
+                "total_transactions": [3, 5, 10],  # mintransactions=5 in config
+            }
+        )
+
+        top_df = generator.apply_tags(test_df, top_n=3)
+
+        # C1 has transactions < 5, should fail rule
+        assert top_df.iloc[0]["meets_min_transactions"] == False
+        assert top_df.iloc[1]["meets_min_transactions"] == True
+        assert top_df.iloc[2]["meets_min_transactions"] == True
+
+    def test_apply_tags_rule_flagged_logic(self, valid_config):
+        """Test apply_tags() sets rule_flagged correctly."""
+        generator = ReportGenerator(valid_config)
+
+        test_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2", "C3", "C4"],
+                "anomaly_score": [-0.9, -0.7, -0.5, -0.3],
+                "total_spend": [50.0, 150.0, 50.0, 200.0],  # minspend=100
+                "total_transactions": [3, 10, 10, 10],  # mintransactions=5
+            }
+        )
+
+        top_df = generator.apply_tags(test_df, top_n=4)
+
+        # C1: fails both rules -> flagged
+        assert top_df.iloc[0]["rule_flagged"] == True
+        # C2: passes both rules -> not flagged
+        assert top_df.iloc[1]["rule_flagged"] == False
+        # C3: fails spend rule -> flagged
+        assert top_df.iloc[2]["rule_flagged"] == True
+        # C4: passes both rules -> not flagged
+        assert top_df.iloc[3]["rule_flagged"] == False
+
+    def test_apply_tags_without_spend_column(self, valid_config):
+        """Test apply_tags() works when total_spend column missing."""
+        generator = ReportGenerator(valid_config)
+
+        test_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_score": [-0.8, -0.5],
+                "total_transactions": [10, 10],
+            }
+        )
+
+        top_df = generator.apply_tags(test_df, top_n=2)
+
+        # Should default to True when column missing
+        assert top_df["meets_min_spend"].all()
+        assert not top_df["rule_flagged"].any()
+
+    def test_apply_tags_without_transactions_column(self, valid_config):
+        """Test apply_tags() works when total_transactions column missing."""
+        generator = ReportGenerator(valid_config)
+
+        test_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_score": [-0.8, -0.5],
+                "total_spend": [200.0, 200.0],
+            }
+        )
+
+        top_df = generator.apply_tags(test_df, top_n=2)
+
+        # Should default to True when column missing
+        assert top_df["meets_min_transactions"].all()
+        assert not top_df["rule_flagged"].any()
+
+    def test_apply_tags_with_invalid_top_n(self, valid_config, sample_scored_df):
+        """Test apply_tags() raises error with invalid top_n."""
+        generator = ReportGenerator(valid_config)
+        ranked_df = generator.rank_anomalies(sample_scored_df)
+
+        with pytest.raises(ReportGenerationError, match="top_n must be positive"):
+            generator.apply_tags(ranked_df, top_n=0)
+
+        with pytest.raises(ReportGenerationError, match="top_n must be positive"):
+            generator.apply_tags(ranked_df, top_n=-5)
+
+    def test_apply_tags_top_n_exceeds_length(
+        self, valid_config, sample_scored_df, caplog
+    ):
+        """Test apply_tags() handles top_n exceeding DataFrame length."""
+        generator = ReportGenerator(valid_config)
+        ranked_df = generator.rank_anomalies(sample_scored_df)
+
+        with caplog.at_level(logging.WARNING):
+            top_df = generator.apply_tags(ranked_df, top_n=1000)
+
+        # Should return all rows
+        assert len(top_df) == len(ranked_df)
+        assert "exceeds DataFrame length" in caplog.text
+
+    def test_apply_tags_logs_flagged_count(
+        self, valid_config, sample_scored_df, caplog
+    ):
+        """Test apply_tags() logs the count of flagged customers."""
+        generator = ReportGenerator(valid_config)
+        ranked_df = generator.rank_anomalies(sample_scored_df)
+
+        with caplog.at_level(logging.INFO):
+            top_df = generator.apply_tags(ranked_df, top_n=20)
+
+        assert "Selected top 20 anomalies" in caplog.text
+        assert "flagged by rules" in caplog.text
+
+    def test_apply_tags_preserves_order(self, valid_config):
+        """Test apply_tags() preserves ranking order from input."""
+        generator = ReportGenerator(valid_config)
+
+        test_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2", "C3", "C4", "C5"],
+                "anomaly_score": [-0.9, -0.7, -0.5, -0.3, -0.1],
+                "total_spend": [200.0, 200.0, 200.0, 200.0, 200.0],
+                "total_transactions": [10, 10, 10, 10, 10],
+            }
+        )
+
+        top_df = generator.apply_tags(test_df, top_n=3)
+
+        # Should preserve order and select first 3
+        assert top_df["customer_id"].tolist() == ["C1", "C2", "C3"]
+        assert top_df["anomaly_score"].tolist() == [-0.9, -0.7, -0.5]
+
+    def test_apply_tags_without_rules_config(self):
+        """Test apply_tags() works when rules config is missing."""
+        config = {"reporting": {"topnanomalies": 20}}  # No rules section
+        generator = ReportGenerator(config)
+
+        test_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_score": [-0.8, -0.5],
+                "total_spend": [50.0, 200.0],
+                "total_transactions": [3, 10],
+            }
+        )
+
+        top_df = generator.apply_tags(test_df, top_n=2)
+
+        # Should default all to True when no rules
+        assert top_df["meets_min_spend"].all()
+        assert top_df["meets_min_transactions"].all()
+        assert not top_df["rule_flagged"].any()
