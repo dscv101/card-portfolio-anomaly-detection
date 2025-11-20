@@ -1,0 +1,14 @@
+Collecting pandas-stubs
+  Downloading pandas_stubs-2.3.2.250926-py3-none-any.whl.metadata (10 kB)
+Collecting pyarrow
+  Downloading pyarrow-22.0.0-cp313-cp313-manylinux_2_28_x86_64.whl.metadata (3.2 kB)
+Requirement already satisfied: numpy>=1.23.5 in /usr/local/lib/python3.13/site-packages (from pandas-stubs) (2.3.5)
+Collecting types-pytz>=2022.1.1 (from pandas-stubs)
+  Downloading types_pytz-2025.2.0.20251108-py3-none-any.whl.metadata (1.7 kB)
+Downloading pandas_stubs-2.3.2.250926-py3-none-any.whl (159 kB)
+Downloading pyarrow-22.0.0-cp313-cp313-manylinux_2_28_x86_64.whl (47.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 47.7/47.7 MB 141.2 MB/s  0:00:00
+Downloading types_pytz-2025.2.0.20251108-py3-none-any.whl (10 kB)
+Installing collected packages: types-pytz, pyarrow, pandas-stubs
+
+Successfully installed pandas-stubs-2.3.2.250926 pyarrow-22.0.0 types-pytz-2025.2.0.20251108

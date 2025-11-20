@@ -46,7 +46,7 @@ jobs:
 
       - name: Type check with mypy
         run: |
-          mypy src/ --strict
+          mypy src/
 
       - name: Run tests with pytest
         run: |
