@@ -25,7 +25,7 @@ class ReportGenerator:
 
     The ReportGenerator implements the complete reporting pipeline:
     1. Rank customers by anomaly_score (ascending - most anomalous first)
-    2. Select top N customers (configurable, default 20)
+    2. Select top N customers (configurable via reporting.topnanomalies)
     3. Apply rule-based category tags (REQ-6.2.1)
     4. Join detailed MCC breakdown for top N customers
     5. Export CSV report for Power BI
@@ -41,7 +41,7 @@ class ReportGenerator:
 
         Args:
             config: Dictionary containing reporting configuration with keys:
-                - reporting.topnanomalies: Number of top anomalies to report (default 20)
+                - reporting.topnanomalies: Number of top anomalies to report (required)
                 - reporting.rules: Business rules for filtering/tagging
 
         Raises:
