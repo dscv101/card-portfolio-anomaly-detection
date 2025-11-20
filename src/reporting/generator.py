@@ -372,6 +372,99 @@ class ReportGenerator:
             self.logger.error(f"Failed to export CSV: {e}")
             raise ReportGenerationError(f"Failed to export CSV: {e}") from e
 
+    def export_summary_json(
+        self,
+        report_df: pd.DataFrame,
+        reporting_week: str,
+        output_path: str | Path,
+    ) -> str:
+        """Export JSON summary with execution metadata and statistics.
+
+        Creates a JSON summary file containing:
+        - Execution metadata (reporting week, timestamp, config)
+        - Statistical summary (total customers, anomaly counts, score distribution)
+        - Top N anomaly customer IDs
+
+        Args:
+            report_df: Final report DataFrame
+                Required columns: customer_id, anomaly_score, anomaly_label
+            reporting_week: Reporting week identifier (YYYY-MM-DD)
+            output_path: Path where JSON file should be written
+
+        Returns:
+            String path to the exported JSON file
+
+        Raises:
+            ReportGenerationError: If export fails
+        """
+        try:
+            import json
+            from datetime import datetime
+
+            output_path = Path(output_path)
+
+            # Ensure parent directory exists
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Calculate statistics
+            total_customers = len(report_df)
+            anomaly_count = int(
+                (report_df["anomaly_label"] == -1).sum()
+                if "anomaly_label" in report_df.columns
+                else 0
+            )
+
+            # Score statistics
+            score_stats = {
+                "min": float(report_df["anomaly_score"].min()),
+                "max": float(report_df["anomaly_score"].max()),
+                "mean": float(report_df["anomaly_score"].mean()),
+                "median": float(report_df["anomaly_score"].median()),
+            }
+
+            # Rule flagged statistics if available
+            flagged_count = 0
+            if "rule_flagged" in report_df.columns:
+                flagged_count = int(report_df["rule_flagged"].sum())
+
+            # Top customer IDs
+            top_customer_ids = report_df["customer_id"].tolist()
+
+            # Build summary dictionary
+            summary = {
+                "metadata": {
+                    "reporting_week": reporting_week,
+                    "generated_at": datetime.now().isoformat(),
+                    "top_n_anomalies": self.config.get("topnanomalies", len(report_df)),
+                },
+                "statistics": {
+                    "total_customers": total_customers,
+                    "anomaly_count": anomaly_count,
+                    "rule_flagged_count": flagged_count,
+                    "anomaly_score": score_stats,
+                },
+                "top_anomalies": {
+                    "customer_ids": top_customer_ids,
+                },
+            }
+
+            # Export to JSON with pretty formatting
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(summary, f, indent=2, ensure_ascii=False)
+
+            file_size = output_path.stat().st_size
+            self.logger.info(
+                f"Exported JSON summary: {output_path} ({file_size:,} bytes)"
+            )
+
+            return str(output_path)
+
+        except Exception as e:
+            self.logger.error(f"Failed to export JSON summary: {e}")
+            raise ReportGenerationError(
+                f"Failed to export JSON summary: {e}"
+            ) from e
+
     def _validate_inputs(self, scored_df: pd.DataFrame, raw_df: pd.DataFrame) -> None:
         """Validate input DataFrames have required columns.
 
