@@ -330,6 +330,48 @@ class ReportGenerator:
             self.logger.error(f"Failed to join MCC breakdown: {e}")
             raise ReportGenerationError(f"Failed to join MCC breakdown: {e}") from e
 
+    def export_csv(
+        self, report_df: pd.DataFrame, output_path: str | Path
+    ) -> str:
+        """Export anomaly report DataFrame to CSV format for Power BI ingestion.
+
+        Args:
+            report_df: Final report DataFrame with all columns
+                Required columns: customer_id, anomaly_score
+            output_path: Path where CSV file should be written
+
+        Returns:
+            String path to the exported CSV file
+
+        Raises:
+            ReportGenerationError: If export fails
+        """
+        try:
+            output_path = Path(output_path)
+
+            # Ensure parent directory exists
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Export to CSV with proper formatting
+            report_df.to_csv(
+                output_path,
+                index=False,
+                float_format="%.4f",
+                encoding="utf-8",
+            )
+
+            file_size = output_path.stat().st_size
+            self.logger.info(
+                f"Exported CSV report: {output_path} "
+                f"({len(report_df)} rows, {file_size:,} bytes)"
+            )
+
+            return str(output_path)
+
+        except Exception as e:
+            self.logger.error(f"Failed to export CSV: {e}")
+            raise ReportGenerationError(f"Failed to export CSV: {e}") from e
+
     def _validate_inputs(self, scored_df: pd.DataFrame, raw_df: pd.DataFrame) -> None:
         """Validate input DataFrames have required columns.
 
