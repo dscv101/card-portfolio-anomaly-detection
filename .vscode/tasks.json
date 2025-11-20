@@ -1,0 +1,83 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Claude: Implement Data Loader",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "Agent: data-engineer | Task: Implement CSV/Parquet data loader in src/data/loader.py following dataconfig.yaml schema. Include error handling, logging, and unit tests."
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Claude: Build Feature Pipeline",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "Agent: feature-engineer | Task: Implement feature engineering pipeline in src/features/engineering.py using specs from modelconfig.yaml. Create derived features for credit card behavior analysis."
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Claude: Train Isolation Forest",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "Agent: ml-model | Task: Implement Isolation Forest training in src/models/isolation_forest.py. Use hyperparameters from modelconfig.yaml. Add model persistence and reproducibility."
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Claude: Add Comprehensive Tests",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "Agent: qa-engineer | Task: Create unit tests for module: ${input:testModule}. Target >80% coverage. Include edge cases, mocks, and parametrized tests."
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Claude: Fix Quality Issues",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "Agent: qa-engineer | Task: Run black, ruff, mypy on codebase. Fix all linting, formatting, and type errors. Update code to pass CI checks."
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Claude: Implement Config Validation",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "Agent: config-utils | Task: Implement YAML config loader with Pydantic validation in src/utils/config.py. Support both modelconfig.yaml and dataconfig.yaml."
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Claude: Setup Logging Infrastructure",
+      "type": "shell",
+      "command": "echo",
+      "args": [
+        "Agent: config-utils | Task: Implement structured logging in src/utils/logging.py. Support JSON and text formats. Include log rotation and log levels from environment."
+      ],
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "testModule",
+      "type": "pickString",
+      "description": "Which module needs tests?",
+      "options": [
+        "data.loader",
+        "data.validator",
+        "features.engineering",
+        "models.isolation_forest",
+        "reporting.generator",
+        "utils.config"
+      ]
+    }
+  ]
+}
