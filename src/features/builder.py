@@ -1,4 +1,4 @@
-"""Feature engineering module for transforming transaction data into model-ready features.
+"""Feature engineering module for transforming transaction data into features.
 
 This module provides the FeatureBuilder class which computes base features,
 concentration metrics, MCC indicators, and delta/growth features from validated
@@ -256,7 +256,8 @@ class FeatureBuilder:
             ).merge(herfindahl, on=["customer_id", "reporting_week"])
 
             self.logger.debug(
-                f"Concentration features computed for {len(concentration_features)} customer-weeks"
+                f"Concentration features computed for "
+                f"{len(concentration_features)} customer-weeks"
             )
 
             return concentration_features

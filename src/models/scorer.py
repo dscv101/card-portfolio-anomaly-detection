@@ -12,7 +12,7 @@ import logging
 import os
 import pickle
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -58,8 +58,8 @@ class ModelScorer:
 
         self.config = config["isolationforest"]
         self.logger = logging.getLogger("models.scorer")
-        self.scaler: StandardScaler | None = None
-        self.model: IsolationForest | None = None
+        self.scaler: Optional[StandardScaler] = None
+        self.model: Optional[IsolationForest] = None
 
         # Validate required hyperparameters
         required_params = [
@@ -116,7 +116,8 @@ class ModelScorer:
         X, feature_cols, valid_mask = self.prepare_feature_matrix(features_df)
         valid_count = valid_mask.sum()
         self.logger.info(
-            f"Prepared feature matrix: {valid_count}/{row_count} valid rows, {len(feature_cols)} features"
+            f"Prepared feature matrix: {valid_count}/{row_count} valid rows, "
+            f"{len(feature_cols)} features"
         )
 
         # Store training metrics as instance attributes for artifact persistence
@@ -139,11 +140,13 @@ class ModelScorer:
         self.anomaly_count = anomaly_count
 
         self.logger.info(
-            f"Scored {valid_count} valid customers, identified {anomaly_count} anomalies ({anomaly_pct:.1f}%)"
+            f"Scored {valid_count} valid customers, identified "
+            f"{anomaly_count} anomalies ({anomaly_pct:.1f}%)"
         )
 
         # Add scores and labels to DataFrame
-        # Use Option 2: Fill dropped rows with sentinel values (np.nan for scores, 0 for labels)
+        # Use Option 2: Fill dropped rows with sentinel values
+        # (np.nan for scores, 0 for labels)
         result_df = features_df.copy()
         result_df["anomaly_score"] = np.nan
         result_df["anomaly_label"] = (
@@ -258,7 +261,8 @@ class ModelScorer:
             # Warn if contamination is unusually high
             if contamination is not None and contamination > 0.2:
                 self.logger.warning(
-                    f"High contamination value: {contamination} > 0.2 may affect anomaly detection"
+                    f"High contamination value: {contamination} > 0.2 "
+                    f"may affect anomaly detection"
                 )
 
             self.model = IsolationForest(

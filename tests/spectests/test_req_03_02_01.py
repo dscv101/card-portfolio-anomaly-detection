@@ -233,7 +233,8 @@ class TestREQ030201IntegrationWithLoader:
         # Override reporting_week substitution by using a static filename
         loader = DataLoader(csv_config)
 
-        # Load data (note: this will fail pattern substitution, but that's OK for this test)
+        # Load data (note: this will fail pattern substitution,
+        # but that's OK for this test)
         # In production, the pattern would include {reporting_week}
         try:
             # Try loading with a dummy week - will fail, which is expected
