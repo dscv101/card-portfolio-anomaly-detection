@@ -18,12 +18,11 @@ import logging
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, Union
 
 import pandas as pd
 
 from main import run_anomaly_detection
-from src.data.loader import DataLoader
 from src.data.validator import DataValidator
 from src.utils.config_loader import load_config
 
@@ -121,21 +120,22 @@ def validate_command(args: argparse.Namespace) -> int:
         validator = DataValidator(config)
         clean_data, validation_summary = validator.validate(df)
 
-        print(f"\n📊 Validation Results:")
+        print("\n📊 Validation Results:")
         print(f"   Total rows: {len(df)}")
         print(f"   Valid rows: {len(clean_data)}")
         print(f"   Rejected rows: {len(df) - len(clean_data)}")
 
         if validation_summary:
-            print(f"\n   Critical failures: {validation_summary.get('critical_failures', 0)}")
+            critical_failures = validation_summary.get("critical_failures", 0)
+            print(f"\n   Critical failures: {critical_failures}")
             print(f"   Errors: {validation_summary.get('errors', 0)}")
             print(f"   Warnings: {validation_summary.get('warnings', 0)}")
 
             if validation_summary.get("critical_failures", 0) > 0:
-                print(f"\n❌ VALIDATION FAILED: Critical issues detected")
+                print("\n❌ VALIDATION FAILED: Critical issues detected")
                 return 3
 
-        print(f"\n✅ VALIDATION PASSED")
+        print("\n✅ VALIDATION PASSED")
         return 0
 
     except Exception as e:
@@ -201,7 +201,9 @@ def backtest_command(args: argparse.Namespace) -> int:
             )
 
             if result["status"] == "success":
-                print(f"  ✅ Success - {result.get('top_anomalies_count', 0)} anomalies")
+                print(
+                    f"  ✅ Success - {result.get('top_anomalies_count', 0)} anomalies"
+                )
                 successes += 1
             else:
                 print(f"  ❌ Failed - {result.get('error', 'Unknown error')}")
@@ -231,7 +233,7 @@ def backtest_command(args: argparse.Namespace) -> int:
         return 1
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: Union[list[str], None] = None) -> int:
     """
     Main CLI entry point.
 

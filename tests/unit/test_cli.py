@@ -2,8 +2,6 @@
 Unit tests for CLI interface.
 """
 
-import json
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -122,8 +120,9 @@ def test_validate_command_success(tmp_path):
         },
     )
 
-    with patch("cli.load_config"), patch(
-        "cli.DataValidator", return_value=mock_validator
+    with (
+        patch("cli.load_config"),
+        patch("cli.DataValidator", return_value=mock_validator),
     ):
         exit_code = validate_command(args)
 
@@ -163,8 +162,9 @@ def test_validate_command_critical_failures(tmp_path):
         },
     )
 
-    with patch("cli.load_config"), patch(
-        "cli.DataValidator", return_value=mock_validator
+    with (
+        patch("cli.load_config"),
+        patch("cli.DataValidator", return_value=mock_validator),
     ):
         exit_code = validate_command(args)
 
@@ -234,9 +234,7 @@ def test_backtest_command_with_failures():
         {"status": "failed", "error": "Data load error"},
     ]
 
-    with patch(
-        "cli.run_anomaly_detection", side_effect=mock_results
-    ):
+    with patch("cli.run_anomaly_detection", side_effect=mock_results):
         exit_code = backtest_command(args)
 
     assert exit_code == 1  # At least one failure
@@ -305,8 +303,9 @@ def test_main_validate_command(tmp_path):
         {"critical_failures": 0, "errors": 0, "warnings": 0},
     )
 
-    with patch("cli.load_config"), patch(
-        "cli.DataValidator", return_value=mock_validator
+    with (
+        patch("cli.load_config"),
+        patch("cli.DataValidator", return_value=mock_validator),
     ):
         exit_code = main(args)
 
@@ -355,4 +354,3 @@ def test_main_help():
         main(args)
 
     assert exc_info.value.code == 0
-
