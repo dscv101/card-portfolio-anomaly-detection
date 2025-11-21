@@ -30,6 +30,9 @@ dev = [
     "pytest-cov>=4.1.0",
     "ipython>=8.14.0",
     "jupyter>=1.0.0",
+    # Type stubs for better type safety
+    "scikit-learn-stubs>=0.0.3",
+    "sqlalchemy2-stubs>=0.0.2a38",
 ]
 
 [tool.black]
@@ -92,14 +95,6 @@ strict_equality = true
 module = "tests.*"
 disallow_untyped_defs = false
 disallow_untyped_calls = false
-
-[[tool.mypy.overrides]]
-module = "sklearn.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "sqlalchemy.*"
-ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "7.0"
