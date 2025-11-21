@@ -116,7 +116,7 @@ Add cron job for health checks:
 - Review pipeline logs
 
 **Issue: Email alerts not sending**
-- Verify SMTP configuration in `.env`
+- Test with: `python -c "import smtplib; s=smtplib.SMTP('smtp.bank.com', 587); s.quit()"`
 - Test with: `python -m smtplib`
 
 ## Rollback Procedure
