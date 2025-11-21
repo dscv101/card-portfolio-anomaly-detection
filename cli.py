@@ -324,7 +324,15 @@ Examples:
         help="Path to data configuration file",
     )
 
-    args = parser.parse_args(argv)
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit as e:
+        # Handle argparse errors (like unknown commands)
+        # Only catch error codes, let successful exits (like help) pass through
+        if e.code == 0:
+            raise  # Re-raise successful exits like --help
+        # Normalize exit codes: argparse uses 2 for errors, but we want 1
+        return 1 if e.code == 2 else (e.code if e.code is not None else 1)
 
     # Configure logging
     logging.basicConfig(
