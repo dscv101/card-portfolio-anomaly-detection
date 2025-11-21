@@ -1,0 +1,7 @@
+# Airflow Dependencies for Card Portfolio Anomaly Detection
+# Authority: Platform (REQ-7.1)
+
+apache-airflow==2.8.0
+apache-airflow-providers-email==1.2.0
+python-dateutil>=2.8.2
+
