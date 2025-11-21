@@ -1,0 +1,178 @@
+# Monitoring and Alerting Configuration
+# Authority: Platform (REQ-7.3)
+# Owner: DevOps Team
+
+# Health Check Configuration
+health_checks:
+  # Data freshness check
+  data_freshness:
+    enabled: true
+    max_age_days: 7  # Alert if data older than 7 days
+    check_interval_minutes: 60
+  
+  # Anomaly count monitoring
+  anomaly_count:
+    enabled: true
+    min_count: 1
+    max_count: 100
+    warn_threshold: 0.5  # Warn if 50% deviation from limits
+    check_interval_minutes: 60
+  
+  # Data quality checks
+  data_quality:
+    enabled: true
+    check_interval_minutes: 60
+    checks:
+      - name: "missing_values"
+        enabled: true
+        max_allowed: 0
+      - name: "duplicate_customers"
+        enabled: true
+        max_allowed: 0
+      - name: "score_range"
+        enabled: true
+        min_value: 0.0
+        max_value: 1.0
+      - name: "required_columns"
+        enabled: true
+        columns:
+          - customer_id
+          - reporting_week
+          - anomaly_score
+          - anomaly_rank
+
+# Alert Configuration
+alerts:
+  # Email alerts
+  email:
+    enabled: true
+    smtp_server: "smtp.bank.com"
+    smtp_port: 587
+    use_tls: true
+    from_address: "anomaly-detection@bank.com"
+    recipients:
+      - "data-science-team@bank.com"
+      - "devops@bank.com"
+    alert_on:
+      - fail
+      - warn
+    rate_limit:
+      enabled: true
+      max_alerts_per_hour: 5
+  
+  # Slack alerts
+  slack:
+    enabled: true
+    webhook_url: "${SLACK_WEBHOOK_URL}"  # Environment variable
+    channel: "#anomaly-detection-alerts"
+    alert_on:
+      - fail
+      - warn
+    mention_users:
+      - "@data-science-team"
+    rate_limit:
+      enabled: true
+      max_alerts_per_hour: 10
+  
+  # Alert routing
+  routing:
+    # Critical alerts (immediate attention)
+    critical:
+      conditions:
+        - check: "data_freshness"
+          status: "fail"
+        - check: "data_quality"
+          status: "fail"
+      notify:
+        - email
+        - slack
+      escalate_after_minutes: 30
+      escalate_to:
+        - "engineering-leads@bank.com"
+    
+    # Warning alerts (attention within 1 hour)
+    warning:
+      conditions:
+        - check: "anomaly_count"
+          status: "warn"
+        - check: "data_freshness"
+          status: "warn"
+      notify:
+        - slack
+      escalate_after_minutes: 60
+      escalate_to:
+        - "data-science-team@bank.com"
+
+# Monitoring Dashboard
+dashboard:
+  # Metrics to track
+  metrics:
+    - name: "pipeline_execution_time"
+      type: "gauge"
+      unit: "seconds"
+      description: "Time taken to run anomaly detection pipeline"
+    
+    - name: "anomaly_count"
+      type: "gauge"
+      unit: "count"
+      description: "Number of anomalies detected"
+    
+    - name: "data_freshness_age"
+      type: "gauge"
+      unit: "days"
+      description: "Age of latest output data in days"
+    
+    - name: "health_check_failures"
+      type: "counter"
+      description: "Number of health check failures"
+    
+    - name: "alert_delivery_success"
+      type: "counter"
+      description: "Number of successfully delivered alerts"
+    
+    - name: "alert_delivery_failure"
+      type: "counter"
+      description: "Number of failed alert deliveries"
+  
+  # Grafana/Prometheus integration (if available)
+  grafana:
+    enabled: false
+    dashboard_url: "https://grafana.bank.com/d/anomaly-detection"
+    refresh_interval_seconds: 60
+  
+  prometheus:
+    enabled: false
+    scrape_endpoint: "http://localhost:9090/metrics"
+    scrape_interval_seconds: 15
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/monitoring.log"
+  max_size_mb: 100
+  backup_count: 10
+  log_health_checks: true
+  log_alert_delivery: true
+
+# Retention and Cleanup
+retention:
+  health_check_results:
+    keep_days: 90
+    archive_location: "logs/health_checks_archive/"
+  
+  alert_history:
+    keep_days: 365
+    archive_location: "logs/alerts_archive/"
+  
+  metrics:
+    keep_days: 30
+    aggregate_after_days: 7  # Aggregate to hourly after 7 days
+
+# Feature Flags
+features:
+  enable_predictive_alerts: false  # ML-based anomaly prediction
+  enable_auto_remediation: false   # Automatic issue fixing
+  enable_detailed_profiling: true  # Detailed performance profiling
+  enable_cost_tracking: false      # Cloud cost monitoring
+
