@@ -53,3 +53,12 @@ class ModelScoringError(AnomalyDetectionError):
     """
 
     pass
+
+
+class ReportGenerationError(AnomalyDetectionError):
+    """Raised when output generation fails.
+
+    This includes failures in report formatting, file export, or metadata generation.
+    """
+
+    pass
