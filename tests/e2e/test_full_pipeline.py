@@ -2,7 +2,6 @@
 End-to-end tests for the full anomaly detection pipeline.
 """
 
-import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
