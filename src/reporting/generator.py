@@ -9,6 +9,8 @@ This module provides the ReportGenerator class which handles:
 - Exporting JSON summaries with execution metadata
 """
 
+from __future__ import annotations
+
 import logging
 from pathlib import Path
 from typing import Any, Union

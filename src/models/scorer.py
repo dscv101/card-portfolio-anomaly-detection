@@ -7,6 +7,8 @@ This module provides the ModelScorer class which handles:
 - Model artifact persistence for reproducibility
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import os

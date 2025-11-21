@@ -4,6 +4,8 @@ This module provides the DataLoader class which supports loading data from
 SQL databases and CSV/Parquet files based on configuration.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import time

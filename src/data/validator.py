@@ -4,6 +4,8 @@ This module provides the DataValidator class which validates DataFrames
 against configured rules and generates validation summaries.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any
 

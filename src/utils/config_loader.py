@@ -5,6 +5,8 @@ This module provides utilities for loading and merging YAML configuration
 files with environment variable substitution and validation.
 """
 
+from __future__ import annotations
+
 import os
 import re
 from pathlib import Path
