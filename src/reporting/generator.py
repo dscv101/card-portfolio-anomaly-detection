@@ -265,6 +265,12 @@ class ReportGenerator:
             ReportGenerationError: If required columns are missing or join fails
         """
         try:
+            # Validate required columns in top_df
+            if "customer_id" not in top_df.columns:
+                raise ReportGenerationError(
+                    "top_df missing required column: customer_id"
+                )
+
             # Validate required columns in raw_df
             required_cols = ["customer_id", "mcc", "spend_amount", "transaction_count"]
             missing_cols = [col for col in required_cols if col not in raw_df.columns]

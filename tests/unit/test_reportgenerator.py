@@ -729,6 +729,32 @@ class TestReportGeneratorJoinMccBreakdown:
         ):
             generator.join_mcc_breakdown(top_df, invalid_raw_df)
 
+    def test_join_mcc_breakdown_missing_customer_id_in_top_df(self, valid_config):
+        """Test join_mcc_breakdown() raises error when top_df missing customer_id."""
+        generator = ReportGenerator(valid_config)
+
+        # top_df missing 'customer_id' column
+        invalid_top_df = pd.DataFrame(
+            {
+                "anomaly_score": [-0.8, -0.5],
+                "risk_tag": ["High", "Medium"],
+            }
+        )
+
+        valid_raw_df = pd.DataFrame(
+            {
+                "customer_id": ["C1"],
+                "mcc": ["5411"],
+                "spend_amount": [100.0],
+                "transaction_count": [5],
+            }
+        )
+
+        with pytest.raises(
+            ReportGenerationError, match="top_df missing required column: customer_id"
+        ):
+            generator.join_mcc_breakdown(invalid_top_df, valid_raw_df)
+
     def test_join_mcc_breakdown_handles_multiple_mccs_per_customer(
         self, valid_config
     ):
