@@ -517,7 +517,7 @@ class TestReportGeneratorApplyTags:
         ranked_df = generator.rank_anomalies(sample_scored_df)
 
         with caplog.at_level(logging.INFO):
-            top_df = generator.apply_tags(ranked_df, top_n=20)
+            generator.apply_tags(ranked_df, top_n=20)
 
         assert "Selected top 20 anomalies" in caplog.text
         assert "flagged by rules" in caplog.text
