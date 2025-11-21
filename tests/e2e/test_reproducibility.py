@@ -115,9 +115,10 @@ class TestReproducibility:
 
         # Load saved artifacts
         artifact_dir = summary["output_files"]["model_artifacts"]
-        with open(f"{artifact_dir}/scaler.pkl", "rb") as f:
+        artifact_path = Path(artifact_dir)
+        with open(artifact_path / "scaler.pkl", "rb") as f:
             scaler = pickle.load(f)
-        with open(f"{artifact_dir}/model.pkl", "rb") as f:
+        with open(artifact_path / "model.pkl", "rb") as f:
             model = pickle.load(f)
 
         # Verify artifacts are fitted and contain expected attributes
