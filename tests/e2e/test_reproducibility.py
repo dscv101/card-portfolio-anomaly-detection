@@ -486,13 +486,12 @@ class TestDataIntegrity:
             f"({unique_customers_raw})"
         )
 
-        # If customers were dropped, validation summary should reflect it
         if customers_scored < unique_customers_raw:
-            validation_summary = summary["validation_summary"]
             # Validation should have documented rejections
             print(
                 f"Note: {unique_customers_raw - customers_scored} customers "
                 f"filtered during validation"
+            )
             )
 
         print("✓ Data integrity maintained through pipeline")
