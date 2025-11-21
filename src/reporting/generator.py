@@ -349,7 +349,7 @@ class ReportGenerator:
             self.logger.error(f"Failed to join MCC breakdown: {e}")
             raise ReportGenerationError(f"Failed to join MCC breakdown: {e}") from e
 
-    def export_csv(self, report_df: pd.DataFrame, output_path: Union[str, Path]) -> str:
+    def export_csv(self, report_df: pd.DataFrame, output_path: str | Path) -> str:
         """Export anomaly report DataFrame to CSV format for Power BI ingestion.
 
         Args:
