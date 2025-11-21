@@ -99,17 +99,27 @@ validation:
         yield str(model_path), str(data_path)
 
 
-def test_run_anomaly_detection_success(temp_config_files):
+def test_run_anomaly_detection_success(temp_config_files, sample_data):
     """Test successful execution of the full pipeline."""
     model_config, data_config = temp_config_files
 
-    # Run pipeline with existing sample data
-    result = run_anomaly_detection(
-        reporting_week="2025-11-18",
-        config_path=model_config,
-        data_config_path=data_config,
-        mode="weekly",
-    )
+    # Create sample data file for the test
+    sample_data_path = Path("datasamples/sample_week_current.parquet")
+    sample_data_path.parent.mkdir(exist_ok=True)
+    sample_data.to_parquet(sample_data_path, index=False)
+
+    try:
+        # Run pipeline with sample data
+        result = run_anomaly_detection(
+            reporting_week="2025-11-18",
+            config_path=model_config,
+            data_config_path=data_config,
+            mode="weekly",
+        )
+    finally:
+        # Clean up the test data file
+        if sample_data_path.exists():
+            sample_data_path.unlink()
 
     # Verify execution summary structure
     assert "status" in result
