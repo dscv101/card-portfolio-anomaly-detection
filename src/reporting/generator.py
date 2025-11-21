@@ -124,6 +124,51 @@ class ReportGenerator:
             self.logger.error(f"Report generation failed: {e}")
             raise ReportGenerationError(f"Failed to generate report: {e}") from e
 
+    def rank_anomalies(self, scored_df: pd.DataFrame) -> pd.DataFrame:
+        """Rank customers by anomaly score (ascending - most anomalous first).
+
+        Sorts the scored DataFrame by anomaly_score in ascending order.
+        Lower (more negative) scores indicate stronger anomalies.
+
+        Args:
+            scored_df: DataFrame with anomaly scores
+                Required columns: customer_id, anomaly_score
+
+        Returns:
+            DataFrame sorted by anomaly_score (ascending)
+
+        Raises:
+            ReportGenerationError: If required columns are missing or DataFrame is empty
+        """
+        try:
+            # Validate required columns
+            if "anomaly_score" not in scored_df.columns:
+                raise ReportGenerationError(
+                    "scored_df missing required column: anomaly_score"
+                )
+
+            # Validate DataFrame is not empty
+            if scored_df.empty:
+                raise ReportGenerationError("scored_df is empty")
+
+            # Sort by anomaly_score ascending (most anomalous first)
+            ranked_df = scored_df.sort_values(
+                by="anomaly_score", ascending=True
+            ).reset_index(drop=True)
+
+            self.logger.info(
+                f"Ranked {len(ranked_df)} customers by anomaly score"
+            )
+            self.logger.debug(
+                f"Top anomaly score: {ranked_df['anomaly_score'].iloc[0]:.4f}"
+            )
+
+            return ranked_df
+
+        except Exception as e:
+            self.logger.error(f"Failed to rank anomalies: {e}")
+            raise ReportGenerationError(f"Failed to rank anomalies: {e}") from e
+
     def _validate_inputs(self, scored_df: pd.DataFrame, raw_df: pd.DataFrame) -> None:
         """Validate input DataFrames have required columns.
 

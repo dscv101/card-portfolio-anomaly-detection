@@ -249,3 +249,111 @@ class TestReportGeneratorGenerate:
 
         with pytest.raises(ReportGenerationError, match="Failed to generate report"):
             generator.generate(invalid_scored_df, sample_raw_df, "2025-11-18")
+
+
+class TestReportGeneratorRankAnomalies:
+    """Test rank_anomalies method."""
+
+    def test_rank_anomalies_sorts_ascending(self, valid_config, sample_scored_df):
+        """Test rank_anomalies() sorts by anomaly_score ascending."""
+        generator = ReportGenerator(valid_config)
+
+        ranked_df = generator.rank_anomalies(sample_scored_df)
+
+        # Verify sorting - anomaly scores should be in ascending order
+        assert (ranked_df["anomaly_score"].diff().dropna() >= 0).all()
+
+    def test_rank_anomalies_preserves_all_rows(self, valid_config, sample_scored_df):
+        """Test rank_anomalies() preserves all rows from input."""
+        generator = ReportGenerator(valid_config)
+
+        ranked_df = generator.rank_anomalies(sample_scored_df)
+
+        assert len(ranked_df) == len(sample_scored_df)
+        assert set(ranked_df.columns) == set(sample_scored_df.columns)
+
+    def test_rank_anomalies_resets_index(self, valid_config, sample_scored_df):
+        """Test rank_anomalies() resets index to start from 0."""
+        generator = ReportGenerator(valid_config)
+
+        ranked_df = generator.rank_anomalies(sample_scored_df)
+
+        # Index should be sequential from 0
+        assert ranked_df.index.tolist() == list(range(len(ranked_df)))
+
+    def test_rank_anomalies_most_anomalous_first(self, valid_config):
+        """Test rank_anomalies() places most anomalous (lowest score) first."""
+        generator = ReportGenerator(valid_config)
+
+        # Create DataFrame with known scores
+        test_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2", "C3", "C4"],
+                "anomaly_score": [0.5, -0.8, 0.2, -0.3],
+                "anomaly_label": [1, -1, 1, -1],
+            }
+        )
+
+        ranked_df = generator.rank_anomalies(test_df)
+
+        # Most anomalous (lowest score) should be first
+        assert ranked_df.iloc[0]["customer_id"] == "C2"
+        assert ranked_df.iloc[0]["anomaly_score"] == -0.8
+        assert ranked_df.iloc[-1]["customer_id"] == "C1"
+        assert ranked_df.iloc[-1]["anomaly_score"] == 0.5
+
+    def test_rank_anomalies_missing_anomaly_score(self, valid_config, sample_scored_df):
+        """Test rank_anomalies() raises error when anomaly_score missing."""
+        generator = ReportGenerator(valid_config)
+        invalid_df = sample_scored_df.drop(columns=["anomaly_score"])
+
+        with pytest.raises(
+            ReportGenerationError,
+            match="scored_df missing required column: anomaly_score",
+        ):
+            generator.rank_anomalies(invalid_df)
+
+    def test_rank_anomalies_logs_execution(
+        self, valid_config, sample_scored_df, caplog
+    ):
+        """Test rank_anomalies() logs execution details."""
+        generator = ReportGenerator(valid_config)
+
+        with caplog.at_level(logging.INFO):
+            ranked_df = generator.rank_anomalies(sample_scored_df)
+
+        assert f"Ranked {len(ranked_df)} customers by anomaly score" in caplog.text
+
+    def test_rank_anomalies_handles_ties(self, valid_config):
+        """Test rank_anomalies() handles tied anomaly scores."""
+        generator = ReportGenerator(valid_config)
+
+        # Create DataFrame with duplicate scores
+        test_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2", "C3"],
+                "anomaly_score": [-0.5, -0.5, 0.3],
+                "anomaly_label": [-1, -1, 1],
+            }
+        )
+
+        ranked_df = generator.rank_anomalies(test_df)
+
+        # Should handle ties gracefully
+        assert len(ranked_df) == 3
+        assert ranked_df.iloc[0]["anomaly_score"] == -0.5
+        assert ranked_df.iloc[1]["anomaly_score"] == -0.5
+        assert ranked_df.iloc[2]["anomaly_score"] == 0.3
+
+    def test_rank_anomalies_with_single_row(self, valid_config):
+        """Test rank_anomalies() works with single-row DataFrame."""
+        generator = ReportGenerator(valid_config)
+
+        test_df = pd.DataFrame(
+            {"customer_id": ["C1"], "anomaly_score": [-0.5], "anomaly_label": [-1]}
+        )
+
+        ranked_df = generator.rank_anomalies(test_df)
+
+        assert len(ranked_df) == 1
+        assert ranked_df.iloc[0]["customer_id"] == "C1"
