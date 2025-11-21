@@ -387,7 +387,8 @@ class ReportGenerator:
 
         Args:
             report_df: Final report DataFrame
-                Required columns: customer_id, anomaly_score, anomaly_label
+                Required columns: customer_id, anomaly_score
+                Optional columns: anomaly_label, rule_flagged
             reporting_week: Reporting week identifier (YYYY-MM-DD)
             output_path: Path where JSON file should be written
 
