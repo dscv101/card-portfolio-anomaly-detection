@@ -53,7 +53,8 @@ SLACK_WEBHOOK_URL=https://hooks.slack.com/...
 airflow db init
 
 # Create admin user
-airflow users create --username admin --password <password> --role Admin
+airflow users create --username admin --password <password> \
+  --firstname Admin --lastname User --email admin@bank.com --role Admin
 
 # Start Airflow
 airflow webserver -p 8080 &
