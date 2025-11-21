@@ -32,7 +32,7 @@ reviews:
       enabled: true
       config_file: ".flake8"
   path_instructions:
-    - paths: "**/*.py"
+    - path: "**/*.py"
       instructions: |
         Favor clarity. If a section is complex, suggest an easier-to-read alternative.
         Enforce type annotations where possible.
