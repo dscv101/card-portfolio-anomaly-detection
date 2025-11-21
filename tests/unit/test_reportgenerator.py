@@ -1454,6 +1454,3 @@ class TestReportGeneratorExportSummaryJson:
         assert stats["max"] == -0.3
         assert stats["mean"] == pytest.approx(-0.55, abs=0.01)
         assert stats["median"] == pytest.approx(-0.55, abs=0.01)
-
-        # Should not include MCC data from C3/C4
-        # (but might have their MCC codes if C1/C2 also have transactions there)
