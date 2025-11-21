@@ -211,7 +211,7 @@ class TestModelTraining:
         assert scorer.model is not None
         assert isinstance(scorer.model, IsolationForest)
 
-        # Check model parameters (constructor parameters, not fitted)
+        # Check model parameters (constructor parameters, not fitted attributes)
         assert scorer.model.n_estimators == 100  # type: ignore[attr-defined]
         assert scorer.model.contamination == 0.05  # type: ignore[attr-defined]
         assert scorer.model.max_samples == 256  # type: ignore[attr-defined]
