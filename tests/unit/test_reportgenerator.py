@@ -1394,7 +1394,7 @@ class TestReportGeneratorExportSummaryJson:
     def test_export_summary_json_missing_customer_id_raises_error(
         self, valid_config, tmp_path
     ):
-        """Test export_summary_json() raises error when customer_id column missing."""
+        """Test export_summary_json() raises error when customer_id missing."""
         generator = ReportGenerator(valid_config)
 
         # DataFrame without customer_id column
@@ -1416,7 +1416,7 @@ class TestReportGeneratorExportSummaryJson:
     def test_export_summary_json_missing_anomaly_score_raises_error(
         self, valid_config, tmp_path
     ):
-        """Test export_summary_json() raises error when anomaly_score column missing."""
+        """Test export_summary_json() raises error when anomaly_score missing."""
         generator = ReportGenerator(valid_config)
 
         # DataFrame without anomaly_score column

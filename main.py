@@ -100,16 +100,16 @@ def run_anomaly_detection(
         features = builder.build_features(clean_data)
         customers_scored = len(features)
         feature_count = len(features.columns) - 1  # Exclude customer_id
-        logger.info(
-            f"Built {feature_count} features for {customers_scored} customers"
-        )
+        logger.info(f"Built {feature_count} features for {customers_scored} customers")
 
         # 6. Score anomalies
         logger.info("Training model and scoring customers")
         scored_df = scorer.fit_and_score(features)
-        top_anomalies_count = len(
-            scored_df[scored_df["is_anomaly"] == 1]
-        ) if "is_anomaly" in scored_df.columns else 0
+        top_anomalies_count = (
+            len(scored_df[scored_df["is_anomaly"] == 1])
+            if "is_anomaly" in scored_df.columns
+            else 0
+        )
         logger.info(
             f"Scored {customers_scored} customers, "
             f"identified {top_anomalies_count} anomalies"

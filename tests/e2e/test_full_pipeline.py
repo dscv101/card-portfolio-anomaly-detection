@@ -241,4 +241,3 @@ def test_pipeline_error_handling():
     assert "error" in result
     assert "error_type" in result
     assert isinstance(result["error"], str)
-
