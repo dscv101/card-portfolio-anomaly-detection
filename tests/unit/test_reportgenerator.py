@@ -400,9 +400,9 @@ class TestReportGeneratorApplyTags:
         top_df = generator.apply_tags(test_df, top_n=3)
 
         # C1 has spend < 100, should fail rule
-        assert top_df.iloc[0]["meets_min_spend"] == False
-        assert top_df.iloc[1]["meets_min_spend"] == True
-        assert top_df.iloc[2]["meets_min_spend"] == True
+        assert not top_df.iloc[0]["meets_min_spend"]
+        assert top_df.iloc[1]["meets_min_spend"]
+        assert top_df.iloc[2]["meets_min_spend"]
 
     def test_apply_tags_with_min_transactions_rule(self, valid_config):
         """Test apply_tags() correctly applies mintransactions rule."""
@@ -421,9 +421,9 @@ class TestReportGeneratorApplyTags:
         top_df = generator.apply_tags(test_df, top_n=3)
 
         # C1 has transactions < 5, should fail rule
-        assert top_df.iloc[0]["meets_min_transactions"] == False
-        assert top_df.iloc[1]["meets_min_transactions"] == True
-        assert top_df.iloc[2]["meets_min_transactions"] == True
+        assert not top_df.iloc[0]["meets_min_transactions"]
+        assert top_df.iloc[1]["meets_min_transactions"]
+        assert top_df.iloc[2]["meets_min_transactions"]
 
     def test_apply_tags_rule_flagged_logic(self, valid_config):
         """Test apply_tags() sets rule_flagged correctly."""
@@ -441,13 +441,13 @@ class TestReportGeneratorApplyTags:
         top_df = generator.apply_tags(test_df, top_n=4)
 
         # C1: fails both rules -> flagged
-        assert top_df.iloc[0]["rule_flagged"] == True
+        assert top_df.iloc[0]["rule_flagged"]
         # C2: passes both rules -> not flagged
-        assert top_df.iloc[1]["rule_flagged"] == False
+        assert not top_df.iloc[1]["rule_flagged"]
         # C3: fails spend rule -> flagged
-        assert top_df.iloc[2]["rule_flagged"] == True
+        assert top_df.iloc[2]["rule_flagged"]
         # C4: passes both rules -> not flagged
-        assert top_df.iloc[3]["rule_flagged"] == False
+        assert not top_df.iloc[3]["rule_flagged"]
 
     def test_apply_tags_without_spend_column(self, valid_config):
         """Test apply_tags() works when total_spend column missing."""
@@ -627,20 +627,28 @@ class TestReportGeneratorJoinMccBreakdown:
         result_df = generator.join_mcc_breakdown(top_df, raw_df)
 
         # C1 should have aggregated spend for MCC 5411
-        assert result_df.loc[result_df["customer_id"] == "C1", "mcc_5411_spend"].iloc[
-            0
-        ] == 150.0
-        assert result_df.loc[
-            result_df["customer_id"] == "C1", "mcc_5411_transactions"
-        ].iloc[0] == 8
+        assert (
+            result_df.loc[result_df["customer_id"] == "C1", "mcc_5411_spend"].iloc[0]
+            == 150.0
+        )
+        assert (
+            result_df.loc[
+                result_df["customer_id"] == "C1", "mcc_5411_transactions"
+            ].iloc[0]
+            == 8
+        )
 
         # C2 should have spend for MCC 5812
-        assert result_df.loc[result_df["customer_id"] == "C2", "mcc_5812_spend"].iloc[
-            0
-        ] == 200.0
-        assert result_df.loc[
-            result_df["customer_id"] == "C2", "mcc_5812_transactions"
-        ].iloc[0] == 10
+        assert (
+            result_df.loc[result_df["customer_id"] == "C2", "mcc_5812_spend"].iloc[0]
+            == 200.0
+        )
+        assert (
+            result_df.loc[
+                result_df["customer_id"] == "C2", "mcc_5812_transactions"
+            ].iloc[0]
+            == 10
+        )
 
     def test_join_mcc_breakdown_fills_missing_mccs_with_zero(self, valid_config):
         """Test join_mcc_breakdown() fills missing MCC values with 0."""
@@ -665,18 +673,18 @@ class TestReportGeneratorJoinMccBreakdown:
         result_df = generator.join_mcc_breakdown(top_df, raw_df)
 
         # C1 should have MCC 5411 data
-        assert result_df.loc[result_df["customer_id"] == "C1", "mcc_5411_spend"].iloc[
-            0
-        ] == 100.0
+        assert (
+            result_df.loc[result_df["customer_id"] == "C1", "mcc_5411_spend"].iloc[0]
+            == 100.0
+        )
 
         # C2 should have 0 for MCC 5411 (no transactions)
-        assert result_df.loc[result_df["customer_id"] == "C2", "mcc_5411_spend"].iloc[
-            0
-        ] == 0.0
+        assert (
+            result_df.loc[result_df["customer_id"] == "C2", "mcc_5411_spend"].iloc[0]
+            == 0.0
+        )
 
-    def test_join_mcc_breakdown_with_no_matching_customers(
-        self, valid_config, caplog
-    ):
+    def test_join_mcc_breakdown_with_no_matching_customers(self, valid_config, caplog):
         """Test join_mcc_breakdown() handles no matching customers."""
         generator = ReportGenerator(valid_config)
 
@@ -756,9 +764,7 @@ class TestReportGeneratorJoinMccBreakdown:
         ):
             generator.join_mcc_breakdown(invalid_top_df, valid_raw_df)
 
-    def test_join_mcc_breakdown_handles_multiple_mccs_per_customer(
-        self, valid_config
-    ):
+    def test_join_mcc_breakdown_handles_multiple_mccs_per_customer(self, valid_config):
         """Test join_mcc_breakdown() handles customers with multiple MCCs."""
         generator = ReportGenerator(valid_config)
 
@@ -799,7 +805,7 @@ class TestReportGeneratorJoinMccBreakdown:
         top_df = generator.apply_tags(ranked_df, top_n=10)
 
         with caplog.at_level(logging.INFO):
-            result_df = generator.join_mcc_breakdown(top_df, sample_raw_df)
+            generator.join_mcc_breakdown(top_df, sample_raw_df)
 
         assert "Joined MCC breakdown for" in caplog.text
         assert "added" in caplog.text
@@ -905,7 +911,11 @@ class TestReportGeneratorExportCsv:
         result_df = pd.read_csv(output_path)
 
         assert len(result_df) == 2
-        assert list(result_df.columns) == ["customer_id", "anomaly_score", "total_spend"]
+        assert list(result_df.columns) == [
+            "customer_id",
+            "anomaly_score",
+            "total_spend",
+        ]
         assert result_df["customer_id"].tolist() == ["C1", "C2"]
 
         # Check float formatting (4 decimal places)
@@ -959,7 +969,7 @@ class TestReportGeneratorExportCsv:
 
         # Create DataFrame with many MCC columns
         data = {"customer_id": ["C1", "C2"], "anomaly_score": [-0.8, -0.5]}
-        
+
         # Add 50 MCC columns
         for i in range(50):
             data[f"mcc_{5000+i}_spend"] = [100.0 * i, 200.0 * i]
@@ -1260,9 +1270,7 @@ class TestReportGeneratorExportSummaryJson:
         # Should default to 0 when column missing
         assert summary["statistics"]["rule_flagged_count"] == 0
 
-    def test_export_summary_json_creates_parent_directory(
-        self, valid_config, tmp_path
-    ):
+    def test_export_summary_json_creates_parent_directory(self, valid_config, tmp_path):
         """Test export_summary_json() creates parent directories."""
         generator = ReportGenerator(valid_config)
 
@@ -1319,13 +1327,12 @@ class TestReportGeneratorExportSummaryJson:
 
         with open(output_path, encoding="utf-8") as f:
             import json
+
             summary = json.load(f)
 
         assert summary["top_anomalies"]["customer_ids"] == ["Café", "Naïve"]
 
-    def test_export_summary_json_logs_execution(
-        self, valid_config, tmp_path, caplog
-    ):
+    def test_export_summary_json_logs_execution(self, valid_config, tmp_path, caplog):
         """Test export_summary_json() logs execution details."""
         generator = ReportGenerator(valid_config)
 
@@ -1387,7 +1394,7 @@ class TestReportGeneratorExportSummaryJson:
     def test_export_summary_json_missing_customer_id_raises_error(
         self, valid_config, tmp_path
     ):
-        """Test export_summary_json() raises error when customer_id column is missing."""
+        """Test export_summary_json() raises error when customer_id column missing."""
         generator = ReportGenerator(valid_config)
 
         # DataFrame without customer_id column
@@ -1409,7 +1416,7 @@ class TestReportGeneratorExportSummaryJson:
     def test_export_summary_json_missing_anomaly_score_raises_error(
         self, valid_config, tmp_path
     ):
-        """Test export_summary_json() raises error when anomaly_score column is missing."""
+        """Test export_summary_json() raises error when anomaly_score column missing."""
         generator = ReportGenerator(valid_config)
 
         # DataFrame without anomaly_score column
@@ -1431,7 +1438,7 @@ class TestReportGeneratorExportSummaryJson:
     def test_export_summary_json_all_nan_anomaly_score_raises_error(
         self, valid_config, tmp_path
     ):
-        """Test export_summary_json() raises error when anomaly_score has only NaN values."""
+        """Test export_summary_json() raises error when anomaly_score has only NaN."""
         generator = ReportGenerator(valid_config)
 
         # DataFrame with all NaN anomaly_score values
@@ -1454,7 +1461,7 @@ class TestReportGeneratorExportSummaryJson:
     def test_export_summary_json_handles_partial_nan_anomaly_score(
         self, valid_config, tmp_path
     ):
-        """Test export_summary_json() handles mix of valid and NaN anomaly_score values."""
+        """Test export_summary_json() handles mix of valid and NaN anomaly_score."""
         import json
 
         generator = ReportGenerator(valid_config)

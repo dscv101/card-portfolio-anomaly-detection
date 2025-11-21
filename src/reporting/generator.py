@@ -11,7 +11,7 @@ This module provides the ReportGenerator class which handles:
 
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Union
 
 import pandas as pd
 
@@ -166,9 +166,7 @@ class ReportGenerator:
                 by="anomaly_score", ascending=True
             ).reset_index(drop=True)
 
-            self.logger.info(
-                f"Ranked {len(ranked_df)} customers by anomaly score"
-            )
+            self.logger.info(f"Ranked {len(ranked_df)} customers by anomaly score")
             self.logger.debug(
                 f"Top anomaly score: {ranked_df['anomaly_score'].iloc[0]:.4f}"
             )
@@ -203,9 +201,7 @@ class ReportGenerator:
         try:
             # Validate top_n parameter
             if top_n <= 0:
-                raise ReportGenerationError(
-                    f"top_n must be positive, got {top_n}"
-                )
+                raise ReportGenerationError(f"top_n must be positive, got {top_n}")
 
             if top_n > len(ranked_df):
                 self.logger.warning(
@@ -219,7 +215,7 @@ class ReportGenerator:
 
             # Apply business rule tags if configuration exists
             rules = self.config.get("rules", {})
-            
+
             # Initialize tag columns with default values
             top_df["meets_min_spend"] = True
             top_df["meets_min_transactions"] = True
@@ -237,9 +233,7 @@ class ReportGenerator:
                 top_df["meets_min_transactions"] = (
                     top_df["total_transactions"] >= min_txns
                 )
-                self.logger.debug(
-                    f"Applied mintransactions rule: threshold={min_txns}"
-                )
+                self.logger.debug(f"Applied mintransactions rule: threshold={min_txns}")
 
             # Set rule_flagged for any customer failing rules
             top_df["rule_flagged"] = ~(
@@ -248,7 +242,8 @@ class ReportGenerator:
 
             flagged_count = top_df["rule_flagged"].sum()
             self.logger.info(
-                f"Selected top {len(top_df)} anomalies, {flagged_count} flagged by rules"
+                f"Selected top {len(top_df)} anomalies, "
+                f"{flagged_count} flagged by rules"
             )
 
             return top_df
@@ -321,12 +316,16 @@ class ReportGenerator:
             mcc_pivot_spend = mcc_agg.pivot(
                 index="customer_id", columns="mcc", values="spend_amount"
             )
-            mcc_pivot_spend.columns = [f"mcc_{col}_spend" for col in mcc_pivot_spend.columns]
+            mcc_pivot_spend.columns = [
+                f"mcc_{col}_spend" for col in mcc_pivot_spend.columns
+            ]
 
             mcc_pivot_txn = mcc_agg.pivot(
                 index="customer_id", columns="mcc", values="transaction_count"
             )
-            mcc_pivot_txn.columns = [f"mcc_{col}_transactions" for col in mcc_pivot_txn.columns]
+            mcc_pivot_txn.columns = [
+                f"mcc_{col}_transactions" for col in mcc_pivot_txn.columns
+            ]
 
             # Combine spend and transaction pivots
             mcc_combined = pd.concat([mcc_pivot_spend, mcc_pivot_txn], axis=1)
@@ -335,7 +334,7 @@ class ReportGenerator:
             # Left join to preserve all top customers
             result_df = top_df.merge(mcc_combined, on="customer_id", how="left")
 
-            # Fill NaN with 0 for MCC columns (customers with no transactions in that MCC)
+            # Fill NaN with 0 for MCC columns (customers with no transactions in MCC)
             mcc_cols = [col for col in result_df.columns if col.startswith("mcc_")]
             result_df[mcc_cols] = result_df[mcc_cols].fillna(0)
 
@@ -350,9 +349,7 @@ class ReportGenerator:
             self.logger.error(f"Failed to join MCC breakdown: {e}")
             raise ReportGenerationError(f"Failed to join MCC breakdown: {e}") from e
 
-    def export_csv(
-        self, report_df: pd.DataFrame, output_path: str | Path
-    ) -> str:
+    def export_csv(self, report_df: pd.DataFrame, output_path: Union[str, Path]) -> str:
         """Export anomaly report DataFrame to CSV format for Power BI ingestion.
 
         Args:
@@ -396,7 +393,7 @@ class ReportGenerator:
         self,
         report_df: pd.DataFrame,
         reporting_week: str,
-        output_path: str | Path,
+        output_path: Union[str, Path],
     ) -> str:
         """Export JSON summary with execution metadata and statistics.
 
@@ -437,7 +434,9 @@ class ReportGenerator:
 
             # Validate required anomaly_score column
             if "anomaly_score" not in report_df.columns:
-                error_msg = "Required column 'anomaly_score' not found in report DataFrame"
+                error_msg = (
+                    "Required column 'anomaly_score' not found in report DataFrame"
+                )
                 self.logger.error(error_msg)
                 raise ReportGenerationError(error_msg)
 
@@ -462,7 +461,9 @@ class ReportGenerator:
 
             # Validate required customer_id column
             if "customer_id" not in report_df.columns:
-                error_msg = "Required column 'customer_id' not found in report DataFrame"
+                error_msg = (
+                    "Required column 'customer_id' not found in report DataFrame"
+                )
                 self.logger.error(error_msg)
                 raise ReportGenerationError(error_msg)
 
@@ -500,9 +501,7 @@ class ReportGenerator:
 
         except Exception as e:
             self.logger.error(f"Failed to export JSON summary: {e}")
-            raise ReportGenerationError(
-                f"Failed to export JSON summary: {e}"
-            ) from e
+            raise ReportGenerationError(f"Failed to export JSON summary: {e}") from e
 
     def _validate_inputs(self, scored_df: pd.DataFrame, raw_df: pd.DataFrame) -> None:
         """Validate input DataFrames have required columns.
