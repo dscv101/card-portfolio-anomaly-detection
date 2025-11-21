@@ -34,7 +34,9 @@ def sql_config() -> dict[str, Any]:
             "type": "sql",
             "sql": {
                 "connection_string": "sqlite:///:memory:",
-                "query_template": "SELECT * FROM transactions WHERE week = '{reporting_week}'",
+                "query_template": (
+                    "SELECT * FROM transactions WHERE week = '{reporting_week}'"
+                ),
                 "timeout": 60,
                 "max_retries": 3,
             },

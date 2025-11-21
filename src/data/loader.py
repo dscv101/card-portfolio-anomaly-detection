@@ -77,7 +77,8 @@ class DataLoader:
 
             elapsed = time.time() - start_time
             logger.info(
-                f"Loaded {len(df)} rows from {self.source_type} in {elapsed:.2f} seconds"
+                f"Loaded {len(df)} rows from {self.source_type} "
+                f"in {elapsed:.2f} seconds"
             )
             return df
 
@@ -110,7 +111,8 @@ class DataLoader:
             connection_string = os.getenv("DB_CONNECTION_STRING")
             if not connection_string:
                 raise ConfigurationError(
-                    "Missing SQL connection_string in config and DB_CONNECTION_STRING env var"
+                    "Missing SQL connection_string in config and "
+                    "DB_CONNECTION_STRING env var"
                 )
 
         if not query_template:
@@ -151,10 +153,11 @@ class DataLoader:
 
             except Exception as e:
                 if attempt < max_retries:
-                    wait_time = 2**attempt  # Exponential backoff: 2, 4, 8 seconds
+                    # Exponential backoff: 2, 4, 8 seconds
+                    wait_time = 2**attempt
                     logger.warning(
-                        f"SQL query failed (attempt {attempt}/{max_retries}): {str(e)}. "
-                        f"Retrying in {wait_time} seconds..."
+                        f"SQL query failed (attempt {attempt}/{max_retries}): "
+                        f"{str(e)}. Retrying in {wait_time} seconds..."
                     )
                     time.sleep(wait_time)
                 else:

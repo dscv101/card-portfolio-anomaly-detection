@@ -83,7 +83,8 @@ class DataValidator:
                 subset=["customer_id", "reporting_week", "mcc"]
             )
             logger.error(
-                f"{sum(missing_counts.values())} rows rejected due to missing critical fields"
+                f"{sum(missing_counts.values())} rows rejected due to "
+                f"missing critical fields"
             )
 
         # 3. Check for duplicates

@@ -7,7 +7,12 @@ ruff>=0.1.0
 flake8>=6.1.0
 mypy>=1.5.1
 
+# Type stubs for better type safety
+pandas-stubs>=2.1.4
+scikit-learn-stubs>=0.0.3
+sqlalchemy2-stubs>=0.0.2a38
+
 # Development tools
 ipython>=8.14.0
 jupyter>=1.0.0
-
+pyarrow>=21.0.0

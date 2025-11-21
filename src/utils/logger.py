@@ -113,25 +113,25 @@ def setup_logger(
     # Merge with provided config
     if config:
         default_config.update(config)
-    config = default_config
+    final_config: dict[str, Any] = default_config
 
     # Create logger
     logger = logging.getLogger(name)
-    logger.setLevel(getattr(logging, config["level"].upper()))
+    logger.setLevel(getattr(logging, final_config["level"].upper()))
     logger.handlers.clear()  # Remove existing handlers
 
     # File handler with rotation
-    if config["file"]["enabled"]:
-        log_path = Path(config["file"]["path"])
+    if final_config["file"]["enabled"]:
+        log_path = Path(final_config["file"]["path"])
         log_path.parent.mkdir(parents=True, exist_ok=True)
 
         file_handler = logging.handlers.RotatingFileHandler(
             filename=str(log_path),
-            maxBytes=config["file"]["maxbytes"],
-            backupCount=config["file"]["backupcount"],
+            maxBytes=final_config["file"]["maxbytes"],
+            backupCount=final_config["file"]["backupcount"],
         )
 
-        if config["format"] == "json":
+        if final_config["format"] == "json":
             file_handler.setFormatter(JsonFormatter())
         else:
             file_handler.setFormatter(
@@ -143,14 +143,14 @@ def setup_logger(
         logger.addHandler(file_handler)
 
     # Console handler
-    if config["console"]["enabled"]:
+    if final_config["console"]["enabled"]:
         console_handler = logging.StreamHandler(sys.stdout)
 
-        if config["console"].get("colorize") and config["format"] != "json":
+        if final_config["console"].get("colorize") and final_config["format"] != "json":
             console_handler.setFormatter(
                 ColoredFormatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
             )
-        elif config["format"] == "json":
+        elif final_config["format"] == "json":
             console_handler.setFormatter(JsonFormatter())
         else:
             console_handler.setFormatter(

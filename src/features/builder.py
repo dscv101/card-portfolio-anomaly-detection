@@ -1,4 +1,4 @@
-"""Feature engineering module for transforming transaction data into model-ready features.
+"""Feature engineering module for transforming transaction data into features.
 
 This module provides the FeatureBuilder class which computes base features,
 concentration metrics, MCC indicators, and delta/growth features from validated
@@ -240,12 +240,14 @@ class FeatureBuilder:
             )
 
             # Calculate Herfindahl index (sum of squared shares)
+            def _calc_herfindahl(group: pd.DataFrame) -> float:
+                return self.calculate_herfindahl(group["mcc_share"])
+
             herfindahl = (
                 df_with_totals.groupby(["customer_id", "reporting_week"])
                 .apply(
-                    lambda x: self.calculate_herfindahl(x["mcc_share"]),
-                    include_groups=False,
-                )
+                    _calc_herfindahl, include_groups=False
+                )  # type: ignore[call-overload]
                 .reset_index()
                 .rename(columns={0: "herfindahl_index"})
             )
@@ -256,7 +258,8 @@ class FeatureBuilder:
             ).merge(herfindahl, on=["customer_id", "reporting_week"])
 
             self.logger.debug(
-                f"Concentration features computed for {len(concentration_features)} customer-weeks"
+                f"Concentration features computed for "
+                f"{len(concentration_features)} customer-weeks"
             )
 
             return concentration_features
@@ -469,12 +472,15 @@ class FeatureBuilder:
                     historical_concentration = self.build_concentration_features(
                         historical_df
                     )
+
+                    def _calc_trend(group: pd.DataFrame) -> float:
+                        return self._calculate_trend(group["herfindahl_index"])
+
                     concentration_trend = (
                         historical_concentration.groupby("customer_id")
                         .apply(
-                            lambda x: self._calculate_trend(x["herfindahl_index"]),
-                            include_groups=False,
-                        )
+                            _calc_trend, include_groups=False
+                        )  # type: ignore[call-overload]
                         .reset_index()
                         .rename(columns={0: "mcc_concentration_trend_12w"})
                     )
@@ -532,7 +538,7 @@ class FeatureBuilder:
         if handle_missing == "impute_zero":
             growth = np.nan_to_num(growth, nan=0.0)
 
-        return pd.Series(growth, index=current.index)
+        return pd.Series(growth, index=current.index, dtype=float)
 
     def _calculate_trend(self, values: pd.Series) -> float:
         """Calculate linear trend (slope) of values over time.
@@ -549,11 +555,11 @@ class FeatureBuilder:
             return 0.0
 
         x = np.arange(len(values))
-        y = values.values
+        y = np.asarray(values.values)  # Ensure we have a numpy array
 
         # Simple linear regression
-        x_mean = x.mean()
-        y_mean = y.mean()
+        x_mean = float(x.mean())
+        y_mean = float(y.mean())
 
         numerator = ((x - x_mean) * (y - y_mean)).sum()
         denominator = ((x - x_mean) ** 2).sum()
