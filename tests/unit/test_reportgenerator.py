@@ -9,6 +9,7 @@ Tests cover:
 """
 
 import logging
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -845,6 +846,233 @@ class TestReportGeneratorJoinMccBreakdown:
         # Should only have 2 customers from top_df
         assert len(result_df) == 2
         assert set(result_df["customer_id"]) == {"C1", "C2"}
+
+
+class TestReportGeneratorExportCsv:
+    """Test export_csv method."""
+
+    def test_export_csv_creates_file(self, valid_config, tmp_path):
+        """Test export_csv() creates CSV file at specified path."""
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2", "C3"],
+                "anomaly_score": [-0.8, -0.5, -0.3],
+                "total_spend": [100.0, 200.0, 300.0],
+            }
+        )
+
+        output_path = tmp_path / "test_report.csv"
+        result_path = generator.export_csv(report_df, output_path)
+
+        assert Path(result_path).exists()
+        assert Path(result_path) == output_path
+
+    def test_export_csv_creates_parent_directory(self, valid_config, tmp_path):
+        """Test export_csv() creates parent directories if they don't exist."""
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_score": [-0.8, -0.5],
+            }
+        )
+
+        output_path = tmp_path / "nested" / "dir" / "report.csv"
+        result_path = generator.export_csv(report_df, output_path)
+
+        assert Path(result_path).exists()
+        assert Path(result_path).parent.exists()
+
+    def test_export_csv_content_format(self, valid_config, tmp_path):
+        """Test export_csv() produces correctly formatted CSV content."""
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_score": [-0.8123, -0.5678],
+                "total_spend": [123.456789, 987.654321],
+            }
+        )
+
+        output_path = tmp_path / "report.csv"
+        generator.export_csv(report_df, output_path)
+
+        # Read back and verify content
+        result_df = pd.read_csv(output_path)
+
+        assert len(result_df) == 2
+        assert list(result_df.columns) == ["customer_id", "anomaly_score", "total_spend"]
+        assert result_df["customer_id"].tolist() == ["C1", "C2"]
+
+        # Check float formatting (4 decimal places)
+        with open(output_path) as f:
+            content = f.read()
+            assert "-0.8123" in content
+            assert "-0.5678" in content
+
+    def test_export_csv_no_index(self, valid_config, tmp_path):
+        """Test export_csv() exports without index column."""
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_score": [-0.8, -0.5],
+            }
+        )
+
+        output_path = tmp_path / "report.csv"
+        generator.export_csv(report_df, output_path)
+
+        # Read first line to check headers
+        with open(output_path) as f:
+            first_line = f.readline().strip()
+            # Should not have unnamed index column
+            assert first_line == "customer_id,anomaly_score"
+
+    def test_export_csv_utf8_encoding(self, valid_config, tmp_path):
+        """Test export_csv() uses UTF-8 encoding."""
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_score": [-0.8, -0.5],
+                "notes": ["café", "naïve"],
+            }
+        )
+
+        output_path = tmp_path / "report.csv"
+        generator.export_csv(report_df, output_path)
+
+        # Read with UTF-8 encoding
+        result_df = pd.read_csv(output_path, encoding="utf-8")
+        assert result_df["notes"].tolist() == ["café", "naïve"]
+
+    def test_export_csv_handles_many_columns(self, valid_config, tmp_path):
+        """Test export_csv() handles DataFrames with many columns."""
+        generator = ReportGenerator(valid_config)
+
+        # Create DataFrame with many MCC columns
+        data = {"customer_id": ["C1", "C2"], "anomaly_score": [-0.8, -0.5]}
+        
+        # Add 50 MCC columns
+        for i in range(50):
+            data[f"mcc_{5000+i}_spend"] = [100.0 * i, 200.0 * i]
+
+        report_df = pd.DataFrame(data)
+
+        output_path = tmp_path / "report.csv"
+        result_path = generator.export_csv(report_df, output_path)
+
+        # Verify file was created and has correct columns
+        result_df = pd.read_csv(result_path)
+        assert len(result_df.columns) == 52  # 2 base + 50 MCC
+
+    def test_export_csv_returns_path_string(self, valid_config, tmp_path):
+        """Test export_csv() returns path as string."""
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1"],
+                "anomaly_score": [-0.8],
+            }
+        )
+
+        output_path = tmp_path / "report.csv"
+        result_path = generator.export_csv(report_df, output_path)
+
+        assert isinstance(result_path, str)
+        assert result_path == str(output_path)
+
+    def test_export_csv_accepts_string_path(self, valid_config, tmp_path):
+        """Test export_csv() accepts path as string."""
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1"],
+                "anomaly_score": [-0.8],
+            }
+        )
+
+        output_path = str(tmp_path / "report.csv")
+        result_path = generator.export_csv(report_df, output_path)
+
+        assert Path(result_path).exists()
+
+    def test_export_csv_logs_execution(self, valid_config, tmp_path, caplog):
+        """Test export_csv() logs export details."""
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2", "C3"],
+                "anomaly_score": [-0.8, -0.5, -0.3],
+            }
+        )
+
+        output_path = tmp_path / "report.csv"
+
+        with caplog.at_level(logging.INFO):
+            generator.export_csv(report_df, output_path)
+
+        assert "Exported CSV report" in caplog.text
+        assert "3 rows" in caplog.text
+        assert "bytes" in caplog.text
+
+    def test_export_csv_overwrites_existing_file(self, valid_config, tmp_path):
+        """Test export_csv() overwrites existing file."""
+        generator = ReportGenerator(valid_config)
+
+        output_path = tmp_path / "report.csv"
+
+        # Create initial file
+        report_df1 = pd.DataFrame(
+            {
+                "customer_id": ["C1"],
+                "anomaly_score": [-0.8],
+            }
+        )
+        generator.export_csv(report_df1, output_path)
+
+        # Overwrite with new data
+        report_df2 = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2", "C3"],
+                "anomaly_score": [-0.9, -0.7, -0.5],
+            }
+        )
+        generator.export_csv(report_df2, output_path)
+
+        # Verify new data
+        result_df = pd.read_csv(output_path)
+        assert len(result_df) == 3
+
+    def test_export_csv_with_empty_dataframe(self, valid_config, tmp_path):
+        """Test export_csv() handles empty DataFrame."""
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": [],
+                "anomaly_score": [],
+            }
+        )
+
+        output_path = tmp_path / "report.csv"
+        result_path = generator.export_csv(report_df, output_path)
+
+        # Should create file with headers only
+        assert Path(result_path).exists()
+        result_df = pd.read_csv(result_path)
+        assert len(result_df) == 0
+        assert list(result_df.columns) == ["customer_id", "anomaly_score"]
 
         # Should not include MCC data from C3/C4
         # (but might have their MCC codes if C1/C2 also have transactions there)
