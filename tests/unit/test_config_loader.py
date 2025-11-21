@@ -3,7 +3,6 @@ Unit tests for configuration loader.
 """
 
 import os
-from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import pytest
@@ -131,11 +130,10 @@ validation:
   rules: {}
 """
 
-    with NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as model_file, NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as data_file:
+    with (
+        NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as model_file,
+        NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as data_file,
+    ):
 
         model_file.write(model_config)
         model_file.flush()
@@ -180,11 +178,10 @@ validation:
   rules: {}
 """
 
-    with NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as model_file, NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as data_file:
+    with (
+        NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as model_file,
+        NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as data_file,
+    ):
 
         model_file.write(model_config)
         model_file.flush()
@@ -195,7 +192,10 @@ validation:
         try:
             config = load_config(model_file.name, data_file.name)
 
-            assert config["datasource"]["connection"] == "postgresql://localhost:5432/testdb"
+            assert (
+                config["datasource"]["connection"]
+                == "postgresql://localhost:5432/testdb"
+            )
 
         finally:
             os.unlink(model_file.name)
@@ -265,11 +265,10 @@ validation:
   rules: {}
 """
 
-    with NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as model_file, NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as data_file:
+    with (
+        NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as model_file,
+        NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as data_file,
+    ):
 
         model_file.write(model_config)
         model_file.flush()
@@ -285,4 +284,3 @@ validation:
         finally:
             os.unlink(model_file.name)
             os.unlink(data_file.name)
-

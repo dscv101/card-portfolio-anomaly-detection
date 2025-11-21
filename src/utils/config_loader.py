@@ -44,7 +44,7 @@ def substitute_env_vars(config: dict[str, Any]) -> dict[str, Any]:
             env_value = os.getenv(var_name)
             if env_value is None:
                 raise ConfigurationError(
-                    f"Environment variable '{var_name}' is not set but required in config"
+                    f"Environment variable '{var_name}' is not set but required"
                 )
             result = result.replace(f"${{{var_name}}}", env_value)
         return result
@@ -146,4 +146,3 @@ def load_config(
     validate_config(merged_config)
 
     return merged_config
-
