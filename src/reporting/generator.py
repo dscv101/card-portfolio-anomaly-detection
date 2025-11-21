@@ -415,12 +415,24 @@ class ReportGenerator:
                 else 0
             )
 
-            # Score statistics
+            # Validate required anomaly_score column
+            if "anomaly_score" not in report_df.columns:
+                error_msg = "Required column 'anomaly_score' not found in report DataFrame"
+                self.logger.error(error_msg)
+                raise ReportGenerationError(error_msg)
+
+            # Score statistics (compute only on non-NaN values)
+            valid_scores = report_df["anomaly_score"].dropna()
+            if len(valid_scores) == 0:
+                error_msg = "Column 'anomaly_score' contains no valid (non-NaN) values"
+                self.logger.error(error_msg)
+                raise ReportGenerationError(error_msg)
+
             score_stats = {
-                "min": float(report_df["anomaly_score"].min()),
-                "max": float(report_df["anomaly_score"].max()),
-                "mean": float(report_df["anomaly_score"].mean()),
-                "median": float(report_df["anomaly_score"].median()),
+                "min": float(valid_scores.min()),
+                "max": float(valid_scores.max()),
+                "mean": float(valid_scores.mean()),
+                "median": float(valid_scores.median()),
             }
 
             # Rule flagged statistics if available

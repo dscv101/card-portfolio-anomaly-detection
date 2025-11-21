@@ -1380,5 +1380,80 @@ class TestReportGeneratorExportSummaryJson:
         ):
             generator.export_summary_json(report_df, "2025-11-18", output_path)
 
+    def test_export_summary_json_missing_anomaly_score_raises_error(
+        self, valid_config, tmp_path
+    ):
+        """Test export_summary_json() raises error when anomaly_score column is missing."""
+        generator = ReportGenerator(valid_config)
+
+        # DataFrame without anomaly_score column
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_label": [-1, -1],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+
+        with pytest.raises(
+            ReportGenerationError,
+            match="Required column 'anomaly_score' not found in report DataFrame",
+        ):
+            generator.export_summary_json(report_df, "2025-11-18", output_path)
+
+    def test_export_summary_json_all_nan_anomaly_score_raises_error(
+        self, valid_config, tmp_path
+    ):
+        """Test export_summary_json() raises error when anomaly_score has only NaN values."""
+        generator = ReportGenerator(valid_config)
+
+        # DataFrame with all NaN anomaly_score values
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_score": [float("nan"), float("nan")],
+                "anomaly_label": [-1, -1],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+
+        with pytest.raises(
+            ReportGenerationError,
+            match="Column 'anomaly_score' contains no valid \\(non-NaN\\) values",
+        ):
+            generator.export_summary_json(report_df, "2025-11-18", output_path)
+
+    def test_export_summary_json_handles_partial_nan_anomaly_score(
+        self, valid_config, tmp_path
+    ):
+        """Test export_summary_json() handles mix of valid and NaN anomaly_score values."""
+        import json
+
+        generator = ReportGenerator(valid_config)
+
+        # DataFrame with some NaN anomaly_score values
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2", "C3", "C4"],
+                "anomaly_score": [-0.8, float("nan"), -0.3, float("nan")],
+                "anomaly_label": [-1, -1, -1, 1],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+        generator.export_summary_json(report_df, "2025-11-18", output_path)
+
+        with open(output_path) as f:
+            summary = json.load(f)
+
+        # Statistics should only include non-NaN values (-0.8, -0.3)
+        stats = summary["statistics"]["anomaly_score"]
+        assert stats["min"] == -0.8
+        assert stats["max"] == -0.3
+        assert stats["mean"] == pytest.approx(-0.55, abs=0.01)
+        assert stats["median"] == pytest.approx(-0.55, abs=0.01)
+
         # Should not include MCC data from C3/C4
         # (but might have their MCC codes if C1/C2 also have transactions there)
