@@ -1,0 +1,13 @@
+data_source:
+  type: database
+  connection_string: "${DB_CONNECTION_STRING}"
+  table_name: anomaly_reports
+  
+refresh_schedule:
+  frequency: daily
+  time: "08:00"
+  timezone: "America/Chicago"
+  
+dashboard:
+  workspace: "Card Analytics"
+  retention_weeks: 52
