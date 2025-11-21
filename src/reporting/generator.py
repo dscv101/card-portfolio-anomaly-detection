@@ -138,7 +138,7 @@ class ReportGenerator:
             DataFrame sorted by anomaly_score (ascending)
 
         Raises:
-            ReportGenerationError: If required columns are missing
+            ReportGenerationError: If required columns are missing or DataFrame is empty
         """
         try:
             # Validate required columns
@@ -146,6 +146,10 @@ class ReportGenerator:
                 raise ReportGenerationError(
                     "scored_df missing required column: anomaly_score"
                 )
+
+            # Validate DataFrame is not empty
+            if scored_df.empty:
+                raise ReportGenerationError("scored_df is empty")
 
             # Sort by anomaly_score ascending (most anomalous first)
             ranked_df = scored_df.sort_values(
