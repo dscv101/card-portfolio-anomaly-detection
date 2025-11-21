@@ -53,26 +53,26 @@ class TestFullPipelineSampleData:
         execution_time = time.time() - start_time
 
         # Assert success
-        assert summary["status"] == "success", (
-            f"Pipeline failed: {summary.get('error', 'Unknown')}"
-        )
+        assert (
+            summary["status"] == "success"
+        ), f"Pipeline failed: {summary.get('error', 'Unknown')}"
 
         # Assert performance requirement (15 minutes = 900 seconds)
-        assert execution_time < 900, (
-            f"Pipeline took {execution_time:.1f}s, exceeds 900s limit"
-        )
+        assert (
+            execution_time < 900
+        ), f"Pipeline took {execution_time:.1f}s, exceeds 900s limit"
         assert summary["execution_time_seconds"] < 900
 
         # Assert outputs created
-        assert os.path.exists(summary["output_files"]["report"]), (
-            "CSV report not created"
-        )
-        assert os.path.exists(summary["output_files"]["summary"]), (
-            "JSON summary not created"
-        )
-        assert os.path.exists(summary["output_files"]["model_artifacts"]), (
-            "Model artifacts not created"
-        )
+        assert os.path.exists(
+            summary["output_files"]["report"]
+        ), "CSV report not created"
+        assert os.path.exists(
+            summary["output_files"]["summary"]
+        ), "JSON summary not created"
+        assert os.path.exists(
+            summary["output_files"]["model_artifacts"]
+        ), "Model artifacts not created"
 
         print(f"✓ Pipeline completed successfully in {execution_time:.1f} seconds")
 
@@ -125,9 +125,9 @@ class TestFullPipelineSampleData:
             "new_high_spender",
             "unknown",
         ]
-        assert report["category_tag"].isin(valid_tags).all(), (
-            "Invalid category tags found"
-        )
+        assert (
+            report["category_tag"].isin(valid_tags).all()
+        ), "Invalid category tags found"
 
         # Assert no unexpected nulls in critical columns
         critical_cols = ["customer_id", "anomaly_score", "anomaly_rank"]
@@ -278,30 +278,24 @@ class TestFullPipelineSampleData:
         from src.data.loader import DataLoader
         from src.utils.config_loader import load_config
 
-        config = load_config(
-            "./config/modelconfig.yaml", "./config/dataconfig.yaml"
-        )
+        config = load_config("./config/modelconfig.yaml", "./config/dataconfig.yaml")
 
         # Load CSV version
         csv_data = pd.read_csv("./datasamples/transactions_2025-11-18.csv")
 
         # Load Parquet version
-        parquet_data = pd.read_parquet(
-            "./datasamples/transactions_2025-11-18.parquet"
-        )
+        parquet_data = pd.read_parquet("./datasamples/transactions_2025-11-18.parquet")
 
         # Assert equivalence
-        assert len(csv_data) == len(parquet_data), (
-            f"Row count mismatch: CSV {len(csv_data)}, Parquet {len(parquet_data)}"
-        )
+        assert len(csv_data) == len(
+            parquet_data
+        ), f"Row count mismatch: CSV {len(csv_data)}, Parquet {len(parquet_data)}"
 
         # Sort both for comparison
-        csv_sorted = csv_data.sort_values(
-            ["customer_id", "mcc"]
-        ).reset_index(drop=True)
-        parquet_sorted = parquet_data.sort_values(
-            ["customer_id", "mcc"]
-        ).reset_index(drop=True)
+        csv_sorted = csv_data.sort_values(["customer_id", "mcc"]).reset_index(drop=True)
+        parquet_sorted = parquet_data.sort_values(["customer_id", "mcc"]).reset_index(
+            drop=True
+        )
 
         # Compare data
         pd.testing.assert_frame_equal(csv_sorted, parquet_sorted)
@@ -324,15 +318,13 @@ class TestFullPipelineSampleData:
         validation_summary = summary["validation_summary"]
 
         # Assert validation summary structure
-        assert isinstance(validation_summary, dict), (
-            "Validation summary must be a dict"
-        )
+        assert isinstance(validation_summary, dict), "Validation summary must be a dict"
 
         # Assert no critical failures
         critical_failures = validation_summary.get("critical_failures", 0)
-        assert critical_failures == 0, (
-            f"Critical validation failures detected: {critical_failures}"
-        )
+        assert (
+            critical_failures == 0
+        ), f"Critical validation failures detected: {critical_failures}"
 
         print("✓ Validation summary validated successfully")
 
@@ -364,9 +356,9 @@ class TestFullPipelineSampleData:
         assert artifacts_dir.is_dir(), "model_artifacts/ is not a directory"
 
         # Check naming convention
-        assert test_config["reporting_week"] in str(artifacts_dir), (
-            "Reporting week not in artifacts directory path"
-        )
+        assert test_config["reporting_week"] in str(
+            artifacts_dir
+        ), "Reporting week not in artifacts directory path"
 
         print("✓ Output directory structure validated successfully")
 
@@ -379,9 +371,7 @@ class TestPerformanceBenchmarks:
         from src.data.loader import DataLoader
         from src.utils.config_loader import load_config
 
-        config = load_config(
-            "./config/modelconfig.yaml", "./config/dataconfig.yaml"
-        )
+        config = load_config("./config/modelconfig.yaml", "./config/dataconfig.yaml")
         loader = DataLoader(config)
 
         start_time = time.time()
@@ -399,9 +389,7 @@ class TestPerformanceBenchmarks:
         from src.data.validator import DataValidator
         from src.utils.config_loader import load_config
 
-        config = load_config(
-            "./config/modelconfig.yaml", "./config/dataconfig.yaml"
-        )
+        config = load_config("./config/modelconfig.yaml", "./config/dataconfig.yaml")
         loader = DataLoader(config)
         validator = DataValidator(config)
 
@@ -423,9 +411,7 @@ class TestPerformanceBenchmarks:
         from src.features.builder import FeatureBuilder
         from src.utils.config_loader import load_config
 
-        config = load_config(
-            "./config/modelconfig.yaml", "./config/dataconfig.yaml"
-        )
+        config = load_config("./config/modelconfig.yaml", "./config/dataconfig.yaml")
         loader = DataLoader(config)
         validator = DataValidator(config)
         builder = FeatureBuilder(config)
@@ -437,9 +423,9 @@ class TestPerformanceBenchmarks:
         features = builder.build_features(clean_data)
         elapsed = time.time() - start_time
 
-        assert elapsed < 30, (
-            f"Feature engineering took {elapsed:.2f}s, exceeds 30s limit"
-        )
+        assert (
+            elapsed < 30
+        ), f"Feature engineering took {elapsed:.2f}s, exceeds 30s limit"
         assert len(features) > 0, "No features generated"
 
         print(f"✓ Feature engineering completed in {elapsed:.2f} seconds")
@@ -452,9 +438,7 @@ class TestPerformanceBenchmarks:
         from src.models.scorer import ModelScorer
         from src.utils.config_loader import load_config
 
-        config = load_config(
-            "./config/modelconfig.yaml", "./config/dataconfig.yaml"
-        )
+        config = load_config("./config/modelconfig.yaml", "./config/dataconfig.yaml")
         loader = DataLoader(config)
         validator = DataValidator(config)
         builder = FeatureBuilder(config)
@@ -482,9 +466,7 @@ class TestPerformanceBenchmarks:
         from src.reporting.generator import ReportGenerator
         from src.utils.config_loader import load_config
 
-        config = load_config(
-            "./config/modelconfig.yaml", "./config/dataconfig.yaml"
-        )
+        config = load_config("./config/modelconfig.yaml", "./config/dataconfig.yaml")
         loader = DataLoader(config)
         validator = DataValidator(config)
         builder = FeatureBuilder(config)
@@ -497,16 +479,11 @@ class TestPerformanceBenchmarks:
         scored_df = scorer.fit_and_score(features)
 
         start_time = time.time()
-        report_path, summary_path = generator.generate(
-            scored_df, data, "2025-11-18"
-        )
+        report_path, summary_path = generator.generate(scored_df, data, "2025-11-18")
         elapsed = time.time() - start_time
 
-        assert elapsed < 15, (
-            f"Report generation took {elapsed:.2f}s, exceeds 15s limit"
-        )
+        assert elapsed < 15, f"Report generation took {elapsed:.2f}s, exceeds 15s limit"
         assert Path(report_path).exists(), "Report file not created"
         assert Path(summary_path).exists(), "Summary file not created"
 
         print(f"✓ Report generation completed in {elapsed:.2f} seconds")
-

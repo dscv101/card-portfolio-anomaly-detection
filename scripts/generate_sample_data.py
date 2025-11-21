@@ -308,9 +308,7 @@ def save_data(
 
 def main() -> None:
     """Main execution function."""
-    parser = argparse.ArgumentParser(
-        description="Generate sample data for E2E testing"
-    )
+    parser = argparse.ArgumentParser(description="Generate sample data for E2E testing")
     parser.add_argument(
         "--n-customers",
         type=int,
@@ -387,4 +385,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
