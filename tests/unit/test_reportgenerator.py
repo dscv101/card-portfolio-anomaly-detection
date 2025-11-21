@@ -1074,5 +1074,409 @@ class TestReportGeneratorExportCsv:
         assert len(result_df) == 0
         assert list(result_df.columns) == ["customer_id", "anomaly_score"]
 
-        # Should not include MCC data from C3/C4
-        # (but might have their MCC codes if C1/C2 also have transactions there)
+
+class TestReportGeneratorExportSummaryJson:
+    """Test export_summary_json method."""
+
+    def test_export_summary_json_creates_file(self, valid_config, tmp_path):
+        """Test export_summary_json() creates JSON file at specified path."""
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2", "C3"],
+                "anomaly_score": [-0.8, -0.5, -0.3],
+                "anomaly_label": [-1, -1, 1],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+        result_path = generator.export_summary_json(
+            report_df, "2025-11-18", output_path
+        )
+
+        assert Path(result_path).exists()
+        assert Path(result_path) == output_path
+
+    def test_export_summary_json_structure(self, valid_config, tmp_path):
+        """Test export_summary_json() produces correctly structured JSON."""
+        import json
+
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2", "C3"],
+                "anomaly_score": [-0.8, -0.5, -0.3],
+                "anomaly_label": [-1, -1, 1],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+        generator.export_summary_json(report_df, "2025-11-18", output_path)
+
+        with open(output_path) as f:
+            summary = json.load(f)
+
+        # Check top-level keys
+        assert "metadata" in summary
+        assert "statistics" in summary
+        assert "top_anomalies" in summary
+
+        # Check metadata structure
+        assert "reporting_week" in summary["metadata"]
+        assert "generated_at" in summary["metadata"]
+        assert "top_n_anomalies" in summary["metadata"]
+
+        # Check statistics structure
+        assert "total_customers" in summary["statistics"]
+        assert "anomaly_count" in summary["statistics"]
+        assert "rule_flagged_count" in summary["statistics"]
+        assert "anomaly_score" in summary["statistics"]
+
+        # Check top_anomalies structure
+        assert "customer_ids" in summary["top_anomalies"]
+
+    def test_export_summary_json_metadata_values(self, valid_config, tmp_path):
+        """Test export_summary_json() includes correct metadata."""
+        import json
+
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_score": [-0.8, -0.5],
+                "anomaly_label": [-1, -1],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+        generator.export_summary_json(report_df, "2025-11-18", output_path)
+
+        with open(output_path) as f:
+            summary = json.load(f)
+
+        assert summary["metadata"]["reporting_week"] == "2025-11-18"
+        assert summary["metadata"]["top_n_anomalies"] == 20  # From config
+        assert "T" in summary["metadata"]["generated_at"]  # ISO format
+
+    def test_export_summary_json_statistics_values(self, valid_config, tmp_path):
+        """Test export_summary_json() calculates correct statistics."""
+        import json
+
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2", "C3", "C4"],
+                "anomaly_score": [-0.8, -0.5, -0.3, 0.2],
+                "anomaly_label": [-1, -1, -1, 1],
+                "rule_flagged": [True, False, True, False],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+        generator.export_summary_json(report_df, "2025-11-18", output_path)
+
+        with open(output_path) as f:
+            summary = json.load(f)
+
+        stats = summary["statistics"]
+        assert stats["total_customers"] == 4
+        assert stats["anomaly_count"] == 3  # 3 with label -1
+        assert stats["rule_flagged_count"] == 2  # 2 with rule_flagged=True
+
+        # Score statistics
+        assert stats["anomaly_score"]["min"] == -0.8
+        assert stats["anomaly_score"]["max"] == 0.2
+        assert stats["anomaly_score"]["mean"] == pytest.approx(-0.35, abs=0.01)
+        assert stats["anomaly_score"]["median"] == pytest.approx(-0.4, abs=0.01)
+
+    def test_export_summary_json_customer_ids(self, valid_config, tmp_path):
+        """Test export_summary_json() includes correct customer IDs."""
+        import json
+
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C001", "C002", "C003"],
+                "anomaly_score": [-0.9, -0.7, -0.5],
+                "anomaly_label": [-1, -1, -1],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+        generator.export_summary_json(report_df, "2025-11-18", output_path)
+
+        with open(output_path) as f:
+            summary = json.load(f)
+
+        assert summary["top_anomalies"]["customer_ids"] == ["C001", "C002", "C003"]
+
+    def test_export_summary_json_without_anomaly_label(self, valid_config, tmp_path):
+        """Test export_summary_json() handles missing anomaly_label column."""
+        import json
+
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_score": [-0.8, -0.5],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+        generator.export_summary_json(report_df, "2025-11-18", output_path)
+
+        with open(output_path) as f:
+            summary = json.load(f)
+
+        # Should default to 0 when column missing
+        assert summary["statistics"]["anomaly_count"] == 0
+
+    def test_export_summary_json_without_rule_flagged(self, valid_config, tmp_path):
+        """Test export_summary_json() handles missing rule_flagged column."""
+        import json
+
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_score": [-0.8, -0.5],
+                "anomaly_label": [-1, -1],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+        generator.export_summary_json(report_df, "2025-11-18", output_path)
+
+        with open(output_path) as f:
+            summary = json.load(f)
+
+        # Should default to 0 when column missing
+        assert summary["statistics"]["rule_flagged_count"] == 0
+
+    def test_export_summary_json_creates_parent_directory(
+        self, valid_config, tmp_path
+    ):
+        """Test export_summary_json() creates parent directories."""
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1"],
+                "anomaly_score": [-0.8],
+                "anomaly_label": [-1],
+            }
+        )
+
+        output_path = tmp_path / "nested" / "dir" / "summary.json"
+        generator.export_summary_json(report_df, "2025-11-18", output_path)
+
+        assert output_path.exists()
+        assert output_path.parent.exists()
+
+    def test_export_summary_json_pretty_formatting(self, valid_config, tmp_path):
+        """Test export_summary_json() uses pretty formatting (indented)."""
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1"],
+                "anomaly_score": [-0.8],
+                "anomaly_label": [-1],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+        generator.export_summary_json(report_df, "2025-11-18", output_path)
+
+        with open(output_path) as f:
+            content = f.read()
+
+        # Pretty formatted JSON should have newlines and indentation
+        assert "\n" in content
+        assert "  " in content  # 2-space indent
+
+    def test_export_summary_json_utf8_encoding(self, valid_config, tmp_path):
+        """Test export_summary_json() uses UTF-8 encoding."""
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["Café", "Naïve"],
+                "anomaly_score": [-0.8, -0.5],
+                "anomaly_label": [-1, -1],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+        generator.export_summary_json(report_df, "2025-11-18", output_path)
+
+        with open(output_path, encoding="utf-8") as f:
+            import json
+            summary = json.load(f)
+
+        assert summary["top_anomalies"]["customer_ids"] == ["Café", "Naïve"]
+
+    def test_export_summary_json_logs_execution(
+        self, valid_config, tmp_path, caplog
+    ):
+        """Test export_summary_json() logs execution details."""
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_score": [-0.8, -0.5],
+                "anomaly_label": [-1, -1],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+
+        with caplog.at_level(logging.INFO):
+            generator.export_summary_json(report_df, "2025-11-18", output_path)
+
+        assert "Exported JSON summary" in caplog.text
+        assert "bytes" in caplog.text
+
+    def test_export_summary_json_returns_path_string(self, valid_config, tmp_path):
+        """Test export_summary_json() returns path as string."""
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1"],
+                "anomaly_score": [-0.8],
+                "anomaly_label": [-1],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+        result_path = generator.export_summary_json(
+            report_df, "2025-11-18", output_path
+        )
+
+        assert isinstance(result_path, str)
+        assert result_path == str(output_path)
+
+    def test_export_summary_json_accepts_string_path(self, valid_config, tmp_path):
+        """Test export_summary_json() accepts path as string."""
+        generator = ReportGenerator(valid_config)
+
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1"],
+                "anomaly_score": [-0.8],
+                "anomaly_label": [-1],
+            }
+        )
+
+        output_path = str(tmp_path / "summary.json")
+        result_path = generator.export_summary_json(
+            report_df, "2025-11-18", output_path
+        )
+
+        assert Path(result_path).exists()
+
+    def test_export_summary_json_missing_customer_id_raises_error(
+        self, valid_config, tmp_path
+    ):
+        """Test export_summary_json() raises error when customer_id column is missing."""
+        generator = ReportGenerator(valid_config)
+
+        # DataFrame without customer_id column
+        report_df = pd.DataFrame(
+            {
+                "anomaly_score": [-0.8, -0.5],
+                "anomaly_label": [-1, -1],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+
+        with pytest.raises(
+            ReportGenerationError,
+            match="Required column 'customer_id' not found in report DataFrame",
+        ):
+            generator.export_summary_json(report_df, "2025-11-18", output_path)
+
+    def test_export_summary_json_missing_anomaly_score_raises_error(
+        self, valid_config, tmp_path
+    ):
+        """Test export_summary_json() raises error when anomaly_score column is missing."""
+        generator = ReportGenerator(valid_config)
+
+        # DataFrame without anomaly_score column
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_label": [-1, -1],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+
+        with pytest.raises(
+            ReportGenerationError,
+            match="Required column 'anomaly_score' not found in report DataFrame",
+        ):
+            generator.export_summary_json(report_df, "2025-11-18", output_path)
+
+    def test_export_summary_json_all_nan_anomaly_score_raises_error(
+        self, valid_config, tmp_path
+    ):
+        """Test export_summary_json() raises error when anomaly_score has only NaN values."""
+        generator = ReportGenerator(valid_config)
+
+        # DataFrame with all NaN anomaly_score values
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2"],
+                "anomaly_score": [float("nan"), float("nan")],
+                "anomaly_label": [-1, -1],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+
+        with pytest.raises(
+            ReportGenerationError,
+            match="Column 'anomaly_score' contains no valid \\(non-NaN\\) values",
+        ):
+            generator.export_summary_json(report_df, "2025-11-18", output_path)
+
+    def test_export_summary_json_handles_partial_nan_anomaly_score(
+        self, valid_config, tmp_path
+    ):
+        """Test export_summary_json() handles mix of valid and NaN anomaly_score values."""
+        import json
+
+        generator = ReportGenerator(valid_config)
+
+        # DataFrame with some NaN anomaly_score values
+        report_df = pd.DataFrame(
+            {
+                "customer_id": ["C1", "C2", "C3", "C4"],
+                "anomaly_score": [-0.8, float("nan"), -0.3, float("nan")],
+                "anomaly_label": [-1, -1, -1, 1],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+        generator.export_summary_json(report_df, "2025-11-18", output_path)
+
+        with open(output_path) as f:
+            summary = json.load(f)
+
+        # Statistics should only include non-NaN values (-0.8, -0.3)
+        stats = summary["statistics"]["anomaly_score"]
+        assert stats["min"] == -0.8
+        assert stats["max"] == -0.3
+        assert stats["mean"] == pytest.approx(-0.55, abs=0.01)
+        assert stats["median"] == pytest.approx(-0.55, abs=0.01)
