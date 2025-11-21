@@ -15,6 +15,7 @@ import logging
 import pickle
 import tempfile
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -72,7 +73,7 @@ class TestModelScorerInitialization:
 
     def test_initialization_missing_isolationforest_key(self):
         """Test initialization fails without 'isolationforest' key."""
-        config = {"features": {}}
+        config: dict[str, Any] = {"features": {}}
 
         with pytest.raises(
             ConfigurationError, match="Missing 'isolationforest' in configuration"
@@ -210,11 +211,11 @@ class TestModelTraining:
         assert scorer.model is not None
         assert isinstance(scorer.model, IsolationForest)
 
-        # Check model parameters
-        assert scorer.model.n_estimators == 100
-        assert scorer.model.contamination == 0.05
-        assert scorer.model.max_samples == 256
-        assert scorer.model.random_state == 42
+        # Check model parameters (these are constructor parameters, not fitted attributes)
+        assert scorer.model.n_estimators == 100  # type: ignore[attr-defined]
+        assert scorer.model.contamination == 0.05  # type: ignore[attr-defined]
+        assert scorer.model.max_samples == 256  # type: ignore[attr-defined]
+        assert scorer.model.random_state == 42  # type: ignore[attr-defined]
 
     def test_fit_isolation_forest_with_invalid_data(self, valid_config):
         """Test IsolationForest fitting fails with invalid data."""

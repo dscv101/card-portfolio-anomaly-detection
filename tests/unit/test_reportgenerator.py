@@ -10,6 +10,7 @@ Tests cover:
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -84,7 +85,7 @@ class TestReportGeneratorInitialization:
 
     def test_initialization_missing_reporting_key(self):
         """Test initialization fails without 'reporting' key."""
-        config = {"features": {}}
+        config: dict[str, Any] = {"features": {}}
 
         with pytest.raises(
             ReportGenerationError, match="Missing 'reporting' in configuration"
@@ -93,7 +94,7 @@ class TestReportGeneratorInitialization:
 
     def test_initialization_missing_topnanomalies(self):
         """Test initialization fails without 'topnanomalies' key."""
-        config = {"reporting": {"rules": {}}}
+        config: dict[str, Any] = {"reporting": {"rules": {}}}
 
         with pytest.raises(
             ReportGenerationError,

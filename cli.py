@@ -332,7 +332,12 @@ Examples:
         if e.code == 0:
             raise  # Re-raise successful exits like --help
         # Normalize exit codes: argparse uses 2 for errors, but we want 1
-        return 1 if e.code == 2 else (e.code if e.code is not None else 1)
+        if e.code == 2:
+            return 1
+        elif e.code is not None:
+            return int(e.code)
+        else:
+            return 1
 
     # Configure logging
     logging.basicConfig(

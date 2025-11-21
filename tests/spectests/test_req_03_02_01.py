@@ -11,6 +11,7 @@ Test Scenario:
 """
 
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import pytest
@@ -20,11 +21,12 @@ from src.data.validator import DataValidator
 
 
 @pytest.fixture
-def dataconfig() -> dict:
+def dataconfig() -> dict[str, Any]:
     """Load dataconfig.yaml for validation rules."""
     config_path = Path("config/dataconfig.yaml")
     with open(config_path) as f:
-        return yaml.safe_load(f)
+        result = yaml.safe_load(f)
+        return result if isinstance(result, dict) else {}
 
 
 @pytest.fixture

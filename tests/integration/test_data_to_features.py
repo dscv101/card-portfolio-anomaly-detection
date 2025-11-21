@@ -111,7 +111,7 @@ class TestDataToFeaturesPipeline:
             "herfindahl_index",
         ]
         for feature in critical_features:
-            null_count = features[feature].isnull().sum()
+            null_count: int = features[feature].isnull().sum()
             assert (
                 null_count == 0
             ), f"Feature '{feature}' has {null_count} unexpected nulls"

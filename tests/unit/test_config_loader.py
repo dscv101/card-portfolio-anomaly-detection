@@ -4,6 +4,7 @@ Unit tests for configuration loader.
 
 import os
 from tempfile import NamedTemporaryFile
+from typing import Any
 
 import pytest
 
@@ -77,11 +78,11 @@ def test_substitute_env_vars_preserves_non_strings():
 def test_validate_config_model_config():
     """Test validation of model configuration."""
     # Valid model config
-    valid_config = {"features": {}, "isolationforest": {}}
+    valid_config: dict[str, dict[str, Any]] = {"features": {}, "isolationforest": {}}
     validate_config(valid_config)  # Should not raise
 
     # Missing isolationforest section
-    invalid_config = {"features": {}}
+    invalid_config: dict[str, dict[str, Any]] = {"features": {}}
     with pytest.raises(ConfigurationError, match="Missing required model config"):
         validate_config(invalid_config)
 
@@ -94,11 +95,11 @@ def test_validate_config_model_config():
 def test_validate_config_data_config():
     """Test validation of data configuration."""
     # Valid data config
-    valid_config = {"datasource": {}, "schema": {}, "validation": {}}
+    valid_config: dict[str, dict[str, Any]] = {"datasource": {}, "schema": {}, "validation": {}}
     validate_config(valid_config)  # Should not raise
 
     # Missing sections
-    invalid_config = {"datasource": {}}
+    invalid_config: dict[str, dict[str, Any]] = {"datasource": {}}
     with pytest.raises(ConfigurationError, match="Missing required data config"):
         validate_config(invalid_config)
 
