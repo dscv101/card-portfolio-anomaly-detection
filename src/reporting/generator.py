@@ -11,7 +11,7 @@ This module provides the ReportGenerator class which handles:
 
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Union
 
 import pandas as pd
 
@@ -349,7 +349,7 @@ class ReportGenerator:
             self.logger.error(f"Failed to join MCC breakdown: {e}")
             raise ReportGenerationError(f"Failed to join MCC breakdown: {e}") from e
 
-    def export_csv(self, report_df: pd.DataFrame, output_path: str | Path) -> str:
+    def export_csv(self, report_df: pd.DataFrame, output_path: Union[str, Path]) -> str:
         """Export anomaly report DataFrame to CSV format for Power BI ingestion.
 
         Args:
@@ -393,7 +393,7 @@ class ReportGenerator:
         self,
         report_df: pd.DataFrame,
         reporting_week: str,
-        output_path: str | Path,
+        output_path: Union[str, Path],
     ) -> str:
         """Export JSON summary with execution metadata and statistics.
 

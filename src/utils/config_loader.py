@@ -8,7 +8,7 @@ files with environment variable substitution and validation.
 import os
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Union
 
 import yaml
 
@@ -82,7 +82,7 @@ def validate_config(config: dict[str, Any]) -> None:
 
 
 def load_config(
-    model_config_path: str | Path, data_config_path: str | Path
+    model_config_path: Union[str, Path], data_config_path: Union[str, Path]
 ) -> dict[str, Any]:
     """
     Load and merge configuration files with environment variable substitution.

@@ -11,6 +11,7 @@ mypy>=1.5.1
 pandas-stubs>=2.1.4
 scikit-learn-stubs>=0.0.3
 sqlalchemy2-stubs>=0.0.2a38
+types-PyYAML>=6.0.12
 
 # Development tools
 ipython>=8.14.0
