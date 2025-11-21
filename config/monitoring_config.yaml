@@ -1,0 +1,17 @@
+health_checks:
+  data_freshness:
+    enabled: true
+    max_age_hours: 25
+    
+alerting:
+  email:
+    enabled: true
+    smtp_host: "smtp.bank.com"
+    smtp_port: 587
+    recipients:
+      - "data-science-team@bank.com"
+  
+  slack:
+    enabled: true
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    channel: "#anomaly-detection-alerts"
