@@ -1358,5 +1358,27 @@ class TestReportGeneratorExportSummaryJson:
 
         assert Path(result_path).exists()
 
+    def test_export_summary_json_missing_customer_id_raises_error(
+        self, valid_config, tmp_path
+    ):
+        """Test export_summary_json() raises error when customer_id column is missing."""
+        generator = ReportGenerator(valid_config)
+
+        # DataFrame without customer_id column
+        report_df = pd.DataFrame(
+            {
+                "anomaly_score": [-0.8, -0.5],
+                "anomaly_label": [-1, -1],
+            }
+        )
+
+        output_path = tmp_path / "summary.json"
+
+        with pytest.raises(
+            ReportGenerationError,
+            match="Required column 'customer_id' not found in report DataFrame",
+        ):
+            generator.export_summary_json(report_df, "2025-11-18", output_path)
+
         # Should not include MCC data from C3/C4
         # (but might have their MCC codes if C1/C2 also have transactions there)

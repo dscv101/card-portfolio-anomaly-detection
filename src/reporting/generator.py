@@ -427,6 +427,12 @@ class ReportGenerator:
             if "rule_flagged" in report_df.columns:
                 flagged_count = int(report_df["rule_flagged"].sum())
 
+            # Validate required customer_id column
+            if "customer_id" not in report_df.columns:
+                error_msg = "Required column 'customer_id' not found in report DataFrame"
+                self.logger.error(error_msg)
+                raise ReportGenerationError(error_msg)
+
             # Top customer IDs
             top_customer_ids = report_df["customer_id"].tolist()
 
