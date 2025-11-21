@@ -275,11 +275,6 @@ class TestFullPipelineSampleData:
         - Same number of rows
         - Same data content
         """
-        from src.data.loader import DataLoader
-        from src.utils.config_loader import load_config
-
-        config = load_config("./config/modelconfig.yaml", "./config/dataconfig.yaml")
-
         # Load CSV version
         csv_data = pd.read_csv("./datasamples/transactions_2025-11-18.csv")
 
