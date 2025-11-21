@@ -229,11 +229,9 @@ class ModelScorer:
         Side Effects:
             Sets self.scaler with fitted StandardScaler
         """
-        from typing import cast
-
         self.scaler = StandardScaler()
         X_scaled = self.scaler.fit_transform(X)
-        return cast(np.ndarray, X_scaled)
+        return X_scaled
 
     def fit_isolation_forest(self, X_scaled: np.ndarray) -> None:
         """Fit IsolationForest with configured hyperparameters.
@@ -377,10 +375,8 @@ class ModelScorer:
     def _get_sklearn_version(self) -> str:
         """Get scikit-learn version for metadata."""
         try:
-            from typing import cast
-
             import sklearn
 
-            return cast(str, sklearn.__version__)
+            return sklearn.__version__
         except Exception:
             return "unknown"
