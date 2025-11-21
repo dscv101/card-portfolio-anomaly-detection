@@ -1,0 +1,23 @@
+# Power BI Configuration for Card Portfolio Anomaly Detection
+# Authority: Platform (REQ-7.2)
+
+data_source:
+  type: database  # Options: file, database
+  connection_string: "${DB_CONNECTION_STRING}"
+  table_name: anomaly_reports
+  
+refresh_schedule:
+  frequency: daily
+  time: "08:00"  # CST
+  timezone: "America/Chicago"
+  
+dashboard:
+  workspace: "Card Analytics"
+  app_name: "Anomaly Detection Dashboard"
+  retention_weeks: 52
+  
+filters:
+  default_weeks: 13
+  max_anomalies_display: 20
+  min_anomaly_score: 0.7
+
