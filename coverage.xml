@@ -209,15 +209,9 @@
 				</class>
 			</classes>
 		</package>
-<<<<<<< HEAD
-		<package name="features" line-rate="0.9344" branch-rate="0" complexity="0">
-			<classes>
-				<class name="builder.py" filename="features/builder.py" complexity="0" line-rate="0.9344" branch-rate="0">
-=======
 		<package name="features" line-rate="0.936" branch-rate="0" complexity="0">
 			<classes>
 				<class name="builder.py" filename="features/builder.py" complexity="0" line-rate="0.936" branch-rate="0">
->>>>>>> 547fef0 (fix: Resolve mypy type checking errors and CI workflow configuration)
 					<methods/>
 					<lines>
 						<line number="8" hits="1"/>
