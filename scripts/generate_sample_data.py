@@ -295,22 +295,22 @@ def save_data(
     csv_path = output_dir / f"transactions_{reporting_week}.csv"
     df.to_csv(csv_path, index=False)
     logger.info(
-        f"Saved {len(df)} rows to CSV: {csv_path} ({csv_path.stat().st_size / 1024:.2f} KB)"
+        f"Saved {len(df)} rows to CSV: {csv_path} "
+        f"({csv_path.stat().st_size / 1024:.2f} KB)"
     )
 
     # Save as Parquet
     parquet_path = output_dir / f"transactions_{reporting_week}.parquet"
     df.to_parquet(parquet_path, index=False)
     logger.info(
-        f"Saved {len(df)} rows to Parquet: {parquet_path} ({parquet_path.stat().st_size / 1024:.2f} KB)"
+        f"Saved {len(df)} rows to Parquet: {parquet_path} "
+        f"({parquet_path.stat().st_size / 1024:.2f} KB)"
     )
 
 
 def main() -> None:
     """Main execution function."""
-    parser = argparse.ArgumentParser(
-        description="Generate sample data for E2E testing"
-    )
+    parser = argparse.ArgumentParser(description="Generate sample data for E2E testing")
     parser.add_argument(
         "--n-customers",
         type=int,
@@ -387,4 +387,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

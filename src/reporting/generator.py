@@ -162,8 +162,9 @@ class ReportGenerator:
                 raise ReportGenerationError("scored_df is empty")
 
             # Sort by anomaly_score ascending (most anomalous first)
+            # Use customer_id as secondary key for deterministic tie-breaking
             ranked_df = scored_df.sort_values(
-                by="anomaly_score", ascending=True
+                by=["anomaly_score", "customer_id"], ascending=True
             ).reset_index(drop=True)
 
             self.logger.info(f"Ranked {len(ranked_df)} customers by anomaly score")

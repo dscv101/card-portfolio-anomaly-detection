@@ -263,7 +263,8 @@ class TestReportGeneratorRankAnomalies:
         ranked_df = generator.rank_anomalies(sample_scored_df)
 
         # Verify sorting - anomaly scores should be in ascending order
-        assert (ranked_df["anomaly_score"].diff().dropna() >= 0).all()
+        score_diffs = ranked_df["anomaly_score"].diff().dropna()
+        assert (score_diffs >= 0).all()  # type: ignore[operator]
 
     def test_rank_anomalies_preserves_all_rows(self, valid_config, sample_scored_df):
         """Test rank_anomalies() preserves all rows from input."""

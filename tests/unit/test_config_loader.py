@@ -95,7 +95,11 @@ def test_validate_config_model_config():
 def test_validate_config_data_config():
     """Test validation of data configuration."""
     # Valid data config
-    valid_config: dict[str, dict[str, Any]] = {"datasource": {}, "schema": {}, "validation": {}}
+    valid_config: dict[str, dict[str, Any]] = {
+        "datasource": {},
+        "schema": {},
+        "validation": {},
+    }
     validate_config(valid_config)  # Should not raise
 
     # Missing sections
