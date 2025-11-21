@@ -1,0 +1,32 @@
+# Monitoring Configuration for Card Portfolio Anomaly Detection
+# Authority: Platform (REQ-7.3)
+
+health_checks:
+  data_freshness:
+    enabled: true
+    max_age_days: 7
+  
+  anomaly_count:
+    enabled: true
+    min_count: 1
+    max_count: 100
+
+alerting:
+  email:
+    enabled: true
+    smtp_server: smtp.bank.com
+    smtp_port: 587
+    recipients:
+      - data-science-team@bank.com
+  
+  slack:
+    enabled: false
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    channel: "#anomaly-detection-alerts"
+
+monitoring:
+  health_check_interval_minutes: 60
+  alert_on_status:
+    - unhealthy
+    - degraded
+
