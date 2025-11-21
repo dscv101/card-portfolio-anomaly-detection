@@ -106,17 +106,27 @@ class ReportGenerator:
                 f"Starting report generation for reporting_week={reporting_week}"
             )
 
-            # Placeholder for full pipeline
-            # Will be implemented in subsequent tasks:
-            # 1. rank_anomalies()
-            # 2. apply_tags()
-            # 3. join_mcc_breakdown()
-            # 4. export_csv()
-            # 5. export_summary_json()
+            # Step 1: Rank customers by anomaly score
+            ranked_df = self.rank_anomalies(scored_df)
+
+            # Step 2: Select top N and apply business rule tags
+            top_n = self.config.get("topnanomalies", 20)
+            tagged_df = self.apply_tags(ranked_df, top_n)
+
+            # Step 3: Join MCC breakdown for detailed analysis
+            report_df = self.join_mcc_breakdown(tagged_df, raw_df)
+
+            # Step 4: Export CSV report for Power BI
+            csv_path = self.export_csv(report_df, report_path)
+
+            # Step 5: Export JSON summary with metadata
+            json_path = self.export_summary_json(
+                report_df, reporting_week, summary_path
+            )
 
             self.logger.info(f"Report generation completed for {reporting_week}")
-            self.logger.info(f"CSV report: {report_path}")
-            self.logger.info(f"JSON summary: {summary_path}")
+            self.logger.info(f"CSV report: {csv_path}")
+            self.logger.info(f"JSON summary: {json_path}")
 
             return (str(report_path), str(summary_path))
 
