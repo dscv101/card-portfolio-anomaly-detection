@@ -79,7 +79,7 @@ ignore = [
 "__init__.py" = ["F401"]  # unused imports in __init__.py
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.9"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -100,6 +100,13 @@ disallow_untyped_calls = false
 
 [[tool.mypy.overrides]]
 module = "pytest"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "sklearn.*",
+    "sqlalchemy.*",
+]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

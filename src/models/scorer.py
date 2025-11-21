@@ -231,7 +231,7 @@ class ModelScorer:
         """
         self.scaler = StandardScaler()
         X_scaled = self.scaler.fit_transform(X)
-        return X_scaled
+        return X_scaled  # type: ignore[no-any-return]
 
     def fit_isolation_forest(self, X_scaled: np.ndarray) -> None:
         """Fit IsolationForest with configured hyperparameters.
@@ -377,6 +377,6 @@ class ModelScorer:
         try:
             import sklearn
 
-            return sklearn.__version__
+            return sklearn.__version__  # type: ignore[no-any-return]
         except Exception:
             return "unknown"
