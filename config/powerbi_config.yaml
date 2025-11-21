@@ -1,0 +1,132 @@
+# Power BI Configuration for Card Portfolio Anomaly Detection
+# Authority: Platform (REQ-7.2)
+# Owner: BI Development Team
+
+# Data Source Configuration
+data_source:
+  # File-based source (development/testing)
+  file:
+    type: csv
+    directory: outputs
+    pattern: "anomalies_*.csv"
+    encoding: utf-8
+    delimiter: ","
+  
+  # Database source (production)
+  database:
+    type: sql_server
+    server: your-server.database.windows.net
+    database: card_analytics
+    table: anomaly_reports
+    authentication: azure_ad
+    connection_timeout: 30
+    command_timeout: 120
+
+# Refresh Schedule
+refresh:
+  frequency: daily
+  time: "08:00"  # 8:00 AM CST (after Airflow DAG completes at 2:00 AM)
+  timezone: "Central Standard Time"
+  retry_count: 3
+  retry_interval_minutes: 10
+  email_on_failure: true
+  notification_recipients:
+    - data-science-team@bank.com
+    - bi-team@bank.com
+
+# Dashboard Settings
+dashboard:
+  name: "Card Portfolio Anomaly Detection"
+  workspace: "Card Portfolio Analytics"
+  
+  # Color scheme for risk levels
+  colors:
+    critical: "#D32F2F"  # Red
+    high: "#F57C00"      # Orange
+    medium: "#FBC02D"    # Yellow
+    low: "#388E3C"       # Green
+  
+  # Default filters
+  default_filters:
+    max_weeks: 13  # Show last 13 weeks by default
+    top_n_anomalies: 20
+    min_anomaly_score: 0.7
+  
+  # Performance settings
+  performance:
+    max_visuals_per_page: 15
+    use_aggregations: true
+    enable_query_reduction: true
+    cache_results: true
+
+# Sharing and Permissions
+sharing:
+  # Workspace members
+  workspace_members:
+    admins:
+      - data-science-team@bank.com
+    members:
+      - risk-management@bank.com
+    viewers:
+      - executive-leadership@bank.com
+  
+  # App publication
+  app:
+    enabled: true
+    name: "Card Anomaly Insights"
+    description: "Weekly anomaly detection reports for card portfolio"
+    publish_to_org: true
+  
+  # Email subscriptions
+  subscriptions:
+    enabled: true
+    default_frequency: weekly
+    default_day: tuesday
+    default_time: "09:00"
+    include_snapshot: true
+
+# Data Retention
+retention:
+  keep_weeks: 52  # Keep 1 year of data
+  archive_older: true
+  archive_location: "archive/"
+
+# Monitoring
+monitoring:
+  track_usage: true
+  track_performance: true
+  alert_on_slow_queries: true
+  slow_query_threshold_seconds: 30
+  log_refresh_history: true
+  log_retention_days: 90
+
+# Feature Flags
+features:
+  enable_drill_through: true
+  enable_export: true
+  enable_comments: true
+  enable_mobile_view: true
+  enable_embedded_analytics: false
+
+# Data Quality Checks
+data_quality:
+  validate_on_refresh: true
+  checks:
+    - name: "Anomaly count in range"
+      type: count
+      min: 1
+      max: 100
+    - name: "Latest week exists"
+      type: freshness
+      max_age_days: 7
+    - name: "No duplicate customers per week"
+      type: uniqueness
+      columns:
+        - customer_id
+        - reporting_week
+    - name: "Anomaly scores valid"
+      type: range
+      column: anomaly_score
+      min: 0
+      max: 1
+
