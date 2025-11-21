@@ -14,6 +14,7 @@ reviews:
   auto_review:
     enabled: true
     drafts: false
+    ignore_bot_prs: false
   walkthrough: false
   request_changes_workflow: true
   tools:
