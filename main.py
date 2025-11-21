@@ -106,8 +106,8 @@ def run_anomaly_detection(
         logger.info("Training model and scoring customers")
         scored_df = scorer.fit_and_score(features)
         top_anomalies_count = (
-            len(scored_df[scored_df["is_anomaly"] == 1])
-            if "is_anomaly" in scored_df.columns
+            len(scored_df[scored_df["anomaly_label"] == 1])
+            if "anomaly_label" in scored_df.columns
             else 0
         )
         logger.info(

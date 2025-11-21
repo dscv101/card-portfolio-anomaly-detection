@@ -40,7 +40,7 @@ isolationforest:
 # Reporting Configuration
 reporting:
   # Number of top anomalies to report
-  topnanomalies: 100
+  topnanomalies: 20
   
   # Business rules for filtering/prioritization
   rules:

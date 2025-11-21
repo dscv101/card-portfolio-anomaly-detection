@@ -3,17 +3,17 @@
 # Spec Reference: REQ-3.x requirements from REQUIREMENTS.md
 
 datasource:
-  type: sql  # Options: sql, csv
-  sql:
-    connection_string: ${DB_CONNECTION_STRING}
-    query_template: |
-      SELECT customer_id, reporting_week, mcc, 
-             spend_amount, transaction_count, avg_ticket_amount
-      FROM card_transactions
-      WHERE reporting_week = '{reporting_week}'
-      ORDER BY customer_id, mcc
-    timeout: 60  # Query timeout in seconds
-    max_retries: 3  # Maximum connection retry attempts
+  type: csv  # Options: sql, csv
+  # sql:
+  #   connection_string: ${DB_CONNECTION_STRING}
+  #   query_template: |
+  #     SELECT customer_id, reporting_week, mcc, 
+  #            spend_amount, transaction_count, avg_ticket_amount
+  #     FROM card_transactions
+  #     WHERE reporting_week = '{reporting_week}'
+  #     ORDER BY customer_id, mcc
+  #   timeout: 60  # Query timeout in seconds
+  #   max_retries: 3  # Maximum connection retry attempts
   csv:
     directory: ./datasamples
     filename_pattern: transactions_{reporting_week}.parquet  # Supports .csv and .parquet
