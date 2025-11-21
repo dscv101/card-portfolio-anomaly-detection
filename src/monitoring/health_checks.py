@@ -11,8 +11,8 @@ class HealthMonitor:
         """Check if data is fresh."""
         try:
             import os
-            file_mod_time = datetime.fromtimestamp(os.path.getmtime(report_path))
-            if datetime.now() - file_mod_time > timedelta(hours=max_age_hours):
+            file_mod_time = datetime.utcfromtimestamp(os.path.getmtime(report_path))
+            if datetime.utcnow() - file_mod_time > timedelta(hours=max_age_hours):
                 return {"status": "FAIL", "message": f"Data is stale (older than {max_age_hours} hours)."}
 
             df = pd.read_csv(report_path)
