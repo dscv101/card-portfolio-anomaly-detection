@@ -160,13 +160,13 @@ class TestReproducibility:
         assert "config" in metadata, "Config snapshot missing"
         config = metadata["config"]
 
-        # Verify key parameters preserved
-        assert "n_estimators" in config, "n_estimators not in config snapshot"
+        # Verify key parameters preserved (using YAML config key names)
+        assert "nestimators" in config, "nestimators not in config snapshot"
         assert "contamination" in config, "contamination not in config snapshot"
-        assert "random_state" in config, "random_state not in config snapshot"
+        assert "randomstate" in config, "randomstate not in config snapshot"
 
-        # Assert random_state set (required for reproducibility)
-        assert config["random_state"] is not None, "random_state not set"
+        # Assert randomstate set (required for reproducibility)
+        assert config["randomstate"] is not None, "randomstate not set"
 
         # Verify feature names preserved
         assert "feature_names" in metadata, "Feature names not in metadata"
