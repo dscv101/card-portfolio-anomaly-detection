@@ -103,7 +103,7 @@ Contains one row per anomalous customer with these columns:
 | Column | Description | Example |
 |--------|-------------|---------|
 | `customer_id` | Unique customer identifier | `CUST_12345` |
-| `anomaly_score` | Anomaly strength (-1 to 1, lower = more anomalous) | `-0.25` |
+| `anomaly_score` | Anomaly strength (approximately -0.5 to 0.5, lower = more anomalous) | `-0.25` |
 | `anomaly_rank` | Rank among detected anomalies (1 = most anomalous) | `1` |
 | `total_spend` | Total spending for the reporting week | `15000.00` |
 | `transaction_count` | Number of transactions | `45` |
@@ -151,6 +151,16 @@ The system looks for unusual combinations of features:
 
 ### Anomaly Score Interpretation
 
+The anomaly score typically ranges from approximately **-0.5 to 0.5**:
+- **Negative scores** indicate outliers (more anomalous behavior) - these customers differ significantly from typical patterns
+- **Positive scores** indicate inliers (less anomalous behavior) - these customers behave similarly to the majority
+
+**Example interpretation:**
+- A customer with score **-0.35** is highly anomalous (e.g., spending $50,000/week when typical is $5,000)
+- A customer with score **-0.15** is moderately anomalous (e.g., 3x normal transaction volume)
+- A customer with score **0.10** is very typical (normal spending and transaction patterns)
+
+**Action thresholds:**
 - **Score < -0.2**: Strong anomaly (review immediately)
 - **Score -0.1 to -0.2**: Moderate anomaly (investigate when possible)
 - **Score > -0.1**: Weak anomaly (likely normal behavior with minor variations)
@@ -159,7 +169,7 @@ The system looks for unusual combinations of features:
 
 The report shows which features contributed most to each anomaly:
 
-```
+```text
 Top Features for CUST_12345:
 1. total_spend: 98th percentile (+$12,000 above median)
 2. mcc_diversity: 15 categories (typical: 5-8)
