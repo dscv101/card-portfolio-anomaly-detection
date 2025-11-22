@@ -151,10 +151,8 @@ The system looks for unusual combinations of features:
 - 🔴 **Unusual Patterns**: Behaviors that don't match typical customer profiles
 
 ### Anomaly Score Interpretation
-
 The anomaly score typically ranges from approximately **-0.5 to 0.5**:
 - **Negative scores** indicate outliers (more anomalous behavior) - these customers differ significantly from typical patterns
-- **Positive scores** indicate inliers (less anomalous behavior) - these customers behave similarly to the majority
 
 **Example interpretation:**
 - A customer with score **-0.35** is highly anomalous (e.g., spending $50,000/week when typical is $5,000)
