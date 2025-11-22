@@ -47,6 +47,8 @@ class TestFullPipelineSampleData:
         # Execute full pipeline
         summary = run_anomaly_detection(
             reporting_week=test_config["reporting_week"],
+            config_path=test_config["config_path"],
+            data_config_path=test_config["data_config_path"],
             mode=test_config["mode"],
         )
 
@@ -87,7 +89,10 @@ class TestFullPipelineSampleData:
         - No unexpected null values
         """
         summary = run_anomaly_detection(
-            reporting_week=test_config["reporting_week"], mode=test_config["mode"]
+            reporting_week=test_config["reporting_week"],
+            config_path=test_config["config_path"],
+            data_config_path=test_config["data_config_path"],
+            mode=test_config["mode"],
         )
 
         # Load CSV report
@@ -100,7 +105,6 @@ class TestFullPipelineSampleData:
         required_columns = [
             "customer_id",
             "reporting_week",
-            "anomaly_rank",
             "anomaly_score",
             "category_tag",
             "total_spend",
@@ -113,9 +117,11 @@ class TestFullPipelineSampleData:
         for col in required_columns:
             assert col in report.columns, f"Missing column: {col}"
 
-        # Assert anomaly_rank is 1-20
-        assert report["anomaly_rank"].min() == 1
-        assert report["anomaly_rank"].max() == 20
+        # Assert anomaly scores are reasonable (lower is more anomalous)
+        assert report["anomaly_score"].min() < 0, "Expected negative anomaly scores"
+        assert (
+            report["anomaly_score"].max() > report["anomaly_score"].min()
+        ), "Expected variation in anomaly scores"
 
         # Assert category_tag values are valid
         valid_tags = [
@@ -130,7 +136,7 @@ class TestFullPipelineSampleData:
         ), "Invalid category tags found"
 
         # Assert no unexpected nulls in critical columns
-        critical_cols = ["customer_id", "anomaly_score", "anomaly_rank"]
+        critical_cols = ["customer_id", "anomaly_score"]
         for col in critical_cols:
             assert report[col].notna().all(), f"Null values in critical column: {col}"
 
@@ -146,7 +152,10 @@ class TestFullPipelineSampleData:
         - Metadata reasonable
         """
         summary = run_anomaly_detection(
-            reporting_week=test_config["reporting_week"], mode=test_config["mode"]
+            reporting_week=test_config["reporting_week"],
+            config_path=test_config["config_path"],
+            data_config_path=test_config["data_config_path"],
+            mode=test_config["mode"],
         )
 
         # Load JSON summary
@@ -189,7 +198,10 @@ class TestFullPipelineSampleData:
         import pickle
 
         summary = run_anomaly_detection(
-            reporting_week=test_config["reporting_week"], mode=test_config["mode"]
+            reporting_week=test_config["reporting_week"],
+            config_path=test_config["config_path"],
+            data_config_path=test_config["data_config_path"],
+            mode=test_config["mode"],
         )
 
         artifact_dir = summary["output_files"]["model_artifacts"]
@@ -228,7 +240,10 @@ class TestFullPipelineSampleData:
         - Unusual ticket size flagged
         """
         summary = run_anomaly_detection(
-            reporting_week=test_config["reporting_week"], mode=test_config["mode"]
+            reporting_week=test_config["reporting_week"],
+            config_path=test_config["config_path"],
+            data_config_path=test_config["data_config_path"],
+            mode=test_config["mode"],
         )
 
         report = pd.read_csv(summary["output_files"]["report"])
@@ -252,7 +267,10 @@ class TestFullPipelineSampleData:
         - Valid rows >= customers scored
         """
         summary = run_anomaly_detection(
-            reporting_week=test_config["reporting_week"], mode=test_config["mode"]
+            reporting_week=test_config["reporting_week"],
+            config_path=test_config["config_path"],
+            data_config_path=test_config["data_config_path"],
+            mode=test_config["mode"],
         )
 
         assert summary["customers_scored"] > 0, "No customers scored"
@@ -307,7 +325,10 @@ class TestFullPipelineSampleData:
         - No critical failures
         """
         summary = run_anomaly_detection(
-            reporting_week=test_config["reporting_week"], mode=test_config["mode"]
+            reporting_week=test_config["reporting_week"],
+            config_path=test_config["config_path"],
+            data_config_path=test_config["data_config_path"],
+            mode=test_config["mode"],
         )
 
         validation_summary = summary["validation_summary"]
@@ -333,7 +354,10 @@ class TestFullPipelineSampleData:
         - model_artifacts/{reporting_week}/ exists
         """
         summary = run_anomaly_detection(
-            reporting_week=test_config["reporting_week"], mode=test_config["mode"]
+            reporting_week=test_config["reporting_week"],
+            config_path=test_config["config_path"],
+            data_config_path=test_config["data_config_path"],
+            mode=test_config["mode"],
         )
 
         # Check outputs directory

@@ -9,7 +9,6 @@ Tests:
 
 import hashlib
 import json
-import os
 import pickle
 import shutil
 from pathlib import Path
@@ -75,11 +74,18 @@ class TestReproducibility:
         )
         report2 = pd.read_csv(summary2["output_files"]["report"])
 
-        # Assert exact match on critical columns
-        pd.testing.assert_frame_equal(
-            report1[["customer_id", "anomaly_rank"]].sort_values("anomaly_rank"),
-            report2[["customer_id", "anomaly_rank"]].sort_values("anomaly_rank"),
-            check_dtype=False,
+        # Assert identical ranking by anomaly_score
+        # Sort both reports by anomaly_score and compare customer_id ordering
+        report1_ranked = report1.sort_values("anomaly_score", ascending=False)[
+            "customer_id"
+        ].reset_index(drop=True)
+        report2_ranked = report2.sort_values("anomaly_score", ascending=False)[
+            "customer_id"
+        ].reset_index(drop=True)
+        pd.testing.assert_series_equal(
+            report1_ranked,
+            report2_ranked,
+            check_names=False,
         )
 
         # Assert anomaly scores match (within floating point tolerance)
@@ -154,13 +160,13 @@ class TestReproducibility:
         assert "config" in metadata, "Config snapshot missing"
         config = metadata["config"]
 
-        # Verify key parameters preserved
-        assert "n_estimators" in config, "n_estimators not in config snapshot"
+        # Verify key parameters preserved (using YAML config key names)
+        assert "nestimators" in config, "nestimators not in config snapshot"
         assert "contamination" in config, "contamination not in config snapshot"
-        assert "random_state" in config, "random_state not in config snapshot"
+        assert "randomstate" in config, "randomstate not in config snapshot"
 
-        # Assert random_state set (required for reproducibility)
-        assert config["random_state"] is not None, "random_state not set"
+        # Assert randomstate set (required for reproducibility)
+        assert config["randomstate"] is not None, "randomstate not set"
 
         # Verify feature names preserved
         assert "feature_names" in metadata, "Feature names not in metadata"
@@ -228,9 +234,7 @@ class TestReproducibility:
         from src.features.builder import FeatureBuilder
         from src.utils.config_loader import load_config
 
-        config = load_config(
-            "./config/modelconfig.yaml", "./config/dataconfig.yaml"
-        )
+        config = load_config("./config/modelconfig.yaml", "./config/dataconfig.yaml")
         loader = DataLoader(config)
         validator = DataValidator(config)
         builder = FeatureBuilder(config)
@@ -266,9 +270,7 @@ class TestReproducibility:
         from src.models.scorer import ModelScorer
         from src.utils.config_loader import load_config
 
-        config = load_config(
-            "./config/modelconfig.yaml", "./config/dataconfig.yaml"
-        )
+        config = load_config("./config/modelconfig.yaml", "./config/dataconfig.yaml")
         loader = DataLoader(config)
         validator = DataValidator(config)
         builder = FeatureBuilder(config)
@@ -305,9 +307,7 @@ class TestReproducibility:
         """
         from src.utils.config_loader import load_config
 
-        config = load_config(
-            "./config/modelconfig.yaml", "./config/dataconfig.yaml"
-        )
+        config = load_config("./config/modelconfig.yaml", "./config/dataconfig.yaml")
 
         # Check model config has random_state
         assert "isolationforest" in config, "IsolationForest config missing"
@@ -334,9 +334,7 @@ class TestReproducibility:
         from src.data.loader import DataLoader
         from src.utils.config_loader import load_config
 
-        config = load_config(
-            "./config/modelconfig.yaml", "./config/dataconfig.yaml"
-        )
+        config = load_config("./config/modelconfig.yaml", "./config/dataconfig.yaml")
         loader = DataLoader(config)
 
         # Load data twice
@@ -373,9 +371,9 @@ class TestPerformanceRequirement:
         execution_time = time.time() - start_time
 
         # Assert pipeline succeeded
-        assert summary["status"] == "success", (
-            f"Pipeline failed: {summary.get('error', 'Unknown')}"
-        )
+        assert (
+            summary["status"] == "success"
+        ), f"Pipeline failed: {summary.get('error', 'Unknown')}"
 
         # Assert performance requirement (15 minutes = 900 seconds)
         assert execution_time < 900, (
@@ -422,7 +420,6 @@ class TestPerformanceRequirement:
         - Bottlenecks identified
         - Optimization opportunities
         """
-        import time
 
         # Run pipeline and capture stage timings
         summary = run_anomaly_detection(
@@ -437,7 +434,7 @@ class TestPerformanceRequirement:
         print("PERFORMANCE BREAKDOWN")
         print("=" * 60)
         print(f"Total execution time: {total_time}s")
-        print(f"Performance requirement: 900s (15 minutes)")
+        print("Performance requirement: 900s (15 minutes)")
         print(f"Margin: {900 - total_time}s ({((900 - total_time) / 900) * 100:.1f}%)")
         print("=" * 60)
 
@@ -462,9 +459,7 @@ class TestDataIntegrity:
         from src.data.loader import DataLoader
         from src.utils.config_loader import load_config
 
-        config = load_config(
-            "./config/modelconfig.yaml", "./config/dataconfig.yaml"
-        )
+        config = load_config("./config/modelconfig.yaml", "./config/dataconfig.yaml")
         loader = DataLoader(config)
 
         # Load raw data
@@ -492,7 +487,6 @@ class TestDataIntegrity:
                 f"Note: {unique_customers_raw - customers_scored} customers "
                 f"filtered during validation"
             )
-            )
 
         print("✓ Data integrity maintained through pipeline")
 
@@ -519,14 +513,13 @@ class TestDataIntegrity:
 
         # Assert minimum expected features
         # (Exact count depends on configuration)
-        assert len(feature_names) >= 10, (
-            f"Too few features: {len(feature_names)}, expected >= 10"
-        )
+        assert (
+            len(feature_names) >= 10
+        ), f"Too few features: {len(feature_names)}, expected >= 10"
 
         # Assert no duplicate feature names
-        assert len(feature_names) == len(set(feature_names)), (
-            "Duplicate feature names detected"
-        )
+        assert len(feature_names) == len(
+            set(feature_names)
+        ), "Duplicate feature names detected"
 
         print(f"✓ Feature completeness verified: {len(feature_names)} features")
-

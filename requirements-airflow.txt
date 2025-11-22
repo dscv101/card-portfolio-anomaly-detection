@@ -1,11 +1,11 @@
 # Airflow Dependencies for Card Portfolio Anomaly Detection
 # Authority: Platform (REQ-7.1)
 
-# Core Airflow
-apache-airflow==2.8.0
+# Core Airflow - upgraded to secure supported release
+apache-airflow>=2.11.0
 
-# Required providers
-apache-airflow-providers-email==1.2.0
+# Required providers - using SMTP provider (email provider is nonexistent)
+apache-airflow-providers-smtp>=2.3.0
 
 # Additional utilities
 python-dateutil>=2.8.2
