@@ -47,6 +47,8 @@ class TestFullPipelineSampleData:
         # Execute full pipeline
         summary = run_anomaly_detection(
             reporting_week=test_config["reporting_week"],
+            config_path=test_config["config_path"],
+            data_config_path=test_config["data_config_path"],
             mode=test_config["mode"],
         )
 
@@ -87,7 +89,10 @@ class TestFullPipelineSampleData:
         - No unexpected null values
         """
         summary = run_anomaly_detection(
-            reporting_week=test_config["reporting_week"], mode=test_config["mode"]
+            reporting_week=test_config["reporting_week"],
+            config_path=test_config["config_path"],
+            data_config_path=test_config["data_config_path"],
+            mode=test_config["mode"],
         )
 
         # Load CSV report
@@ -146,7 +151,10 @@ class TestFullPipelineSampleData:
         - Metadata reasonable
         """
         summary = run_anomaly_detection(
-            reporting_week=test_config["reporting_week"], mode=test_config["mode"]
+            reporting_week=test_config["reporting_week"],
+            config_path=test_config["config_path"],
+            data_config_path=test_config["data_config_path"],
+            mode=test_config["mode"],
         )
 
         # Load JSON summary
@@ -189,7 +197,10 @@ class TestFullPipelineSampleData:
         import pickle
 
         summary = run_anomaly_detection(
-            reporting_week=test_config["reporting_week"], mode=test_config["mode"]
+            reporting_week=test_config["reporting_week"],
+            config_path=test_config["config_path"],
+            data_config_path=test_config["data_config_path"],
+            mode=test_config["mode"],
         )
 
         artifact_dir = summary["output_files"]["model_artifacts"]
@@ -228,7 +239,10 @@ class TestFullPipelineSampleData:
         - Unusual ticket size flagged
         """
         summary = run_anomaly_detection(
-            reporting_week=test_config["reporting_week"], mode=test_config["mode"]
+            reporting_week=test_config["reporting_week"],
+            config_path=test_config["config_path"],
+            data_config_path=test_config["data_config_path"],
+            mode=test_config["mode"],
         )
 
         report = pd.read_csv(summary["output_files"]["report"])
@@ -252,7 +266,10 @@ class TestFullPipelineSampleData:
         - Valid rows >= customers scored
         """
         summary = run_anomaly_detection(
-            reporting_week=test_config["reporting_week"], mode=test_config["mode"]
+            reporting_week=test_config["reporting_week"],
+            config_path=test_config["config_path"],
+            data_config_path=test_config["data_config_path"],
+            mode=test_config["mode"],
         )
 
         assert summary["customers_scored"] > 0, "No customers scored"
@@ -307,7 +324,10 @@ class TestFullPipelineSampleData:
         - No critical failures
         """
         summary = run_anomaly_detection(
-            reporting_week=test_config["reporting_week"], mode=test_config["mode"]
+            reporting_week=test_config["reporting_week"],
+            config_path=test_config["config_path"],
+            data_config_path=test_config["data_config_path"],
+            mode=test_config["mode"],
         )
 
         validation_summary = summary["validation_summary"]
@@ -333,7 +353,10 @@ class TestFullPipelineSampleData:
         - model_artifacts/{reporting_week}/ exists
         """
         summary = run_anomaly_detection(
-            reporting_week=test_config["reporting_week"], mode=test_config["mode"]
+            reporting_week=test_config["reporting_week"],
+            config_path=test_config["config_path"],
+            data_config_path=test_config["data_config_path"],
+            mode=test_config["mode"],
         )
 
         # Check outputs directory
