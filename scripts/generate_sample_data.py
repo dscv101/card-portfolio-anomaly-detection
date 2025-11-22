@@ -62,10 +62,11 @@ def generate_normal_customers(
 
         for mcc in active_mccs:
             # Generate realistic spend and transaction patterns
-            if np.random.random() < 0.7:  # 70% low spenders
+            r = np.random.random()
+            if r < 0.7:  # 70% low spenders
                 txn_count = np.random.randint(1, 20)
                 spend = np.random.uniform(50, 1000)
-            elif np.random.random() < 0.85:  # 15% medium spenders
+            elif r < 0.85:  # 15% medium spenders
                 txn_count = np.random.randint(10, 50)
                 spend = np.random.uniform(500, 3000)
             else:  # 15% high spenders
