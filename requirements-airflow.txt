@@ -9,3 +9,4 @@ apache-airflow-providers-smtp>=2.3.0
 
 # Additional utilities
 python-dateutil>=2.8.2
+
