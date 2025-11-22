@@ -162,10 +162,18 @@ See [docs/tasks.md](docs/tasks.md) for detailed task breakdown.
 
 ## Documentation
 
-- [REQUIREMENTS.md](docs/REQUIREMENTS.md) - System requirements and specifications
-- [design.md](docs/design.md) - Technical architecture and design decisions
-- [tasks.md](docs/tasks.md) - Detailed task breakdown and estimates
+### For Users
+- [USER_GUIDE.md](docs/USER_GUIDE.md) - Complete guide for business analysts and product owners
+
+### For Developers
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture and design patterns
+- [API_REFERENCE.md](docs/API_REFERENCE.md) - Complete API documentation with code examples
 - [AGENTS.md](AGENTS.md) - Python best practices for AI agent contributions
+
+### Project Management
+- [REQUIREMENTS.md](docs/REQUIREMENTS.md) - System requirements and specifications
+- [design.md](docs/design.md) - Technical design decisions
+- [tasks.md](docs/tasks.md) - Detailed task breakdown and estimates
 
 ## Contributing
 
@@ -188,4 +196,3 @@ Data Science Team - For questions and support
 ---
 
 **Spec-Driven Development**: Configuration over code constants. Same inputs + same config = same outputs.
-
