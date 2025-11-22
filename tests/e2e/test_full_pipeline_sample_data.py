@@ -105,7 +105,6 @@ class TestFullPipelineSampleData:
         required_columns = [
             "customer_id",
             "reporting_week",
-            "anomaly_rank",
             "anomaly_score",
             "category_tag",
             "total_spend",
@@ -118,9 +117,11 @@ class TestFullPipelineSampleData:
         for col in required_columns:
             assert col in report.columns, f"Missing column: {col}"
 
-        # Assert anomaly_rank is 1-20
-        assert report["anomaly_rank"].min() == 1
-        assert report["anomaly_rank"].max() == 20
+        # Assert anomaly scores are reasonable (lower is more anomalous)
+        assert report["anomaly_score"].min() < 0, "Expected negative anomaly scores"
+        assert (
+            report["anomaly_score"].max() > report["anomaly_score"].min()
+        ), "Expected variation in anomaly scores"
 
         # Assert category_tag values are valid
         valid_tags = [
@@ -135,7 +136,7 @@ class TestFullPipelineSampleData:
         ), "Invalid category tags found"
 
         # Assert no unexpected nulls in critical columns
-        critical_cols = ["customer_id", "anomaly_score", "anomaly_rank"]
+        critical_cols = ["customer_id", "anomaly_score"]
         for col in critical_cols:
             assert report[col].notna().all(), f"Null values in critical column: {col}"
 

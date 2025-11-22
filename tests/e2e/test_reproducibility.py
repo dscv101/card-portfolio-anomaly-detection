@@ -74,11 +74,18 @@ class TestReproducibility:
         )
         report2 = pd.read_csv(summary2["output_files"]["report"])
 
-        # Assert exact match on critical columns
-        pd.testing.assert_frame_equal(
-            report1[["customer_id", "anomaly_rank"]].sort_values("anomaly_rank"),
-            report2[["customer_id", "anomaly_rank"]].sort_values("anomaly_rank"),
-            check_dtype=False,
+        # Assert identical ranking by anomaly_score
+        # Sort both reports by anomaly_score and compare customer_id ordering
+        report1_ranked = report1.sort_values("anomaly_score", ascending=False)[
+            "customer_id"
+        ].reset_index(drop=True)
+        report2_ranked = report2.sort_values("anomaly_score", ascending=False)[
+            "customer_id"
+        ].reset_index(drop=True)
+        pd.testing.assert_series_equal(
+            report1_ranked,
+            report2_ranked,
+            check_names=False,
         )
 
         # Assert anomaly scores match (within floating point tolerance)
