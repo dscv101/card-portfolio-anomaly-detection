@@ -124,6 +124,7 @@ A visual dashboard with:
 **Accessing the Report:**
 
 Open the HTML file in any web browser:
+
 ```bash
 # On Mac/Linux
 open outputs/report_YYYY-MM-DD.html
@@ -262,7 +263,7 @@ data:
 
 **Problem:** "No anomalies detected"
 
-**Solution:** 
+**Solution:**
 - Check if data loaded correctly: `python cli.py validate --data-config config/dataconfig.yaml`
 - Increase `contamination` parameter in `modelconfig.yaml`
 - Verify that the data has enough variation (not all customers behaving identically)
@@ -360,11 +361,13 @@ A: No, this is a batch system optimized for weekly/monthly retrospective analysi
 **Q: How do I export results to Excel?**
 
 A: The CSV output can be opened directly in Excel:
+
 ```bash
 open outputs/anomalies_2025-11-21.csv
 ```
 
 Or convert programmatically:
+
 ```python
 import pandas as pd
 df = pd.read_csv('outputs/anomalies_2025-11-21.csv')
@@ -378,7 +381,7 @@ df.to_excel('outputs/anomalies_2025-11-21.xlsx', index=False)
 A: Reach out to the Data Science Team via:
 - Slack: #data-science-support
 - Email: datascience@company.com
-- GitHub Issues: [Project Repository](https://github.com/dscv101/card-portfolio-anomaly-detection/issues)
+- GitHub Issues: [Project Repository](https://github.com/ORG/REPO/issues)
 
 ---
 
