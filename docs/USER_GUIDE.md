@@ -36,12 +36,14 @@ The Card Portfolio Anomaly Detection System is an automated tool that identifies
 **Initial Setup:**
 
 1. Clone the repository:
+
    ```bash
-   git clone https://github.com/dscv101/card-portfolio-anomaly-detection.git
+   git clone https://github.com/your-company/card-portfolio-anomaly-detection.git
    cd card-portfolio-anomaly-detection
    ```
 
 2. Install dependencies:
+
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -49,6 +51,7 @@ The Card Portfolio Anomaly Detection System is an automated tool that identifies
    ```
 
 3. Verify installation:
+
    ```bash
    python -c "import pandas, sklearn; print('Setup complete!')"
    ```
@@ -397,4 +400,3 @@ CUST_77234,-0.25,3,35000.00,89,393.26,14,0.35,high_spend,
 ---
 
 **Need Help?** Contact the Data Science Team or open an issue on GitHub.
-
